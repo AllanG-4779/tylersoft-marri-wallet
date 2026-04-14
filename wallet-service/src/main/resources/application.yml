@@ -1,0 +1,33 @@
+server:
+  port: 8090
+
+spring:
+
+  # ── Reactive data access (R2DBC) ──────────────────────────────────────────
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5434/wallet_db
+    username: postgres
+    password: cnd80751xh
+    pool:
+      max-size: 20
+      initial-size: 5
+      max-idle-time: 30m
+      max-acquire-time: 30s
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: wallet-service
+
+logging:
+  level:
+    com.ekenya.wallet: INFO
+    org.springframework.transaction: DEBUG
