@@ -1,11 +1,15 @@
 package net.tylersoft.wallet.account;
 
-import net.tylersoft.wallet.currency.CurrencyRepository;
+import net.tylersoft.wallet.repository.AccountRepository;
+import net.tylersoft.wallet.repository.AccountTypeRepository;
+import net.tylersoft.wallet.repository.CurrencyRepository;
+import net.tylersoft.wallet.model.Account;
 import net.tylersoft.wallet.utils.CoreWalletUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
@@ -27,9 +31,9 @@ import java.time.OffsetDateTime;
 @RequiredArgsConstructor
 public class AccountOpeningService {
 
-    private final AccountRepository     accountRepository;
+    private final AccountRepository accountRepository;
     private final AccountTypeRepository accountTypeRepository;
-    private final CurrencyRepository    currencyRepository;
+    private final CurrencyRepository currencyRepository;
 
     /**
      * Open a new wallet account.
@@ -45,38 +49,33 @@ public class AccountOpeningService {
      */
     @Transactional
     public Mono<OpenAccountResult> openAccount(
-            String activeUser,
             String currency,
             String accountPrefix,
             String phoneNumber,
             String accountName,
-            String reqType,
-            BigDecimal openingBalance) {
+            String reqType, @ModelAttribute String authenticatedUser) {
 
         // -- Equivalent of: if strcmp(req_type, 'create') = 0 then ... else error end if
         if (!"create".equalsIgnoreCase(reqType)) {
             return Mono.just(OpenAccountResult.error("03", "Invalid account management request"));
         }
-
-        // -- Equivalent of: select id, account_number_length into accountTypeId, accLength
-        //                    from acc_account_types where account_prefix = accountPrefix
-        //    with exit handler for not found → 01 / 'Invalid account prefix'
         return accountTypeRepository.findByAccountPrefix(accountPrefix)
                 .switchIfEmpty(Mono.error(new OpenAccountException("01", "Invalid account prefix")))
-
-                // -- Equivalent of: select id into currencyId from sys_currencies
-                //                    where currency_code = currency limit 0,1
-                //    with exit handler for not found → 14 / 'Invalid currency code'
+                .flatMap(each -> {
+                    log.info("Checking accountType for prefix {}: found {}", accountPrefix, each.getId());
+                    return accountRepository.countAllByPhoneNumberAndAccountTypeId(phoneNumber, each.getId())
+                            .flatMap(count -> {
+                                if (count > each.getMaxAccounts()) {
+                                    return Mono.error(new OpenAccountException("01", "Account limit reached for this account type"));
+                                }
+                                return Mono.just(each);
+                            });
+                })
                 .flatMap(accountType ->
                         currencyRepository.findByCurrencyCode(currency)
                                 .switchIfEmpty(Mono.error(new OpenAccountException("14", "Invalid currency code")))
                                 .flatMap(curr -> {
-
-                                    // -- Equivalent of:
-                                    //    select concat('temp_', floor(rand(500)*400), '_', phoneNumber)
-                                    //    into accountNumber;
                                     String tempNumber = buildTempAccountNumber(phoneNumber);
-
                                     Account account = new Account();
                                     account.setPhoneNumber(phoneNumber);
                                     account.setCurrencyId(curr.getId());
@@ -86,29 +85,20 @@ public class AccountOpeningService {
                                     account.setBlocked(false);
                                     account.setDormant(false);
                                     account.setOpeningDate(OffsetDateTime.now());
-                                    account.setOpeningBalance(openingBalance);
-                                    account.setActualBalance(openingBalance);
-                                    account.setAvailableBalance(openingBalance);
+                                    account.setOpeningBalance(BigDecimal.valueOf(0.00));
+                                    account.setActualBalance(BigDecimal.valueOf(0.00));
+                                    account.setAvailableBalance(BigDecimal.valueOf(0.00));
                                     account.setAccountTypeId(accountType.getId());
                                     account.setAccountName(accountName);
                                     account.setStatus((short) 1);
-                                    account.setCreatedBy(activeUser);
-
-                                    // -- insert into acc_accounts (...)
+                                    account.setCreatedBy(authenticatedUser);
                                     return accountRepository.save(account)
                                             .flatMap(saved -> {
-
-                                                // -- Equivalent of:
-                                                //    call sp_generate_ac_number(accountId, accountPrefix,
-                                                //                               accLength, true, accountNumber);
                                                 String finalNumber = CoreWalletUtils.generate(
                                                         Math.toIntExact(saved.getId()),
                                                         accountPrefix,
                                                         accountType.getAccountNumberLength(),
-                                                        false);
-
-                                                // -- update acc_accounts set account_number=accountNumber
-                                                //    where id = accountId
+                                                        true);
                                                 saved.setAccountNumber(finalNumber);
                                                 return accountRepository.save(saved)
                                                         .map(updated -> {
@@ -128,14 +118,7 @@ public class AccountOpeningService {
                 });
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
-    /**
-     * Equivalent of:
-     * {@code select concat('temp_', floor(rand(500) * 400), '_', phoneNumber) into accountNumber}
-     */
     private static String buildTempAccountNumber(String phoneNumber) {
         long rand = (long) (Math.random() * 500 * 400);
         return "temp_" + rand + "_" + phoneNumber;

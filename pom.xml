@@ -16,7 +16,11 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>common</module>
         <module>wallet-service</module>
+        <module>wallet-user-management</module>
+        <module>payment-service</module>
+        <module>gateway</module>
     </modules>
 
     <url/>

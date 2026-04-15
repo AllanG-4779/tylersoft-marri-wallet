@@ -30,10 +30,10 @@ public class GlobalExceptionHandler {
         return ApiResponse.error("Validation failed: " + message);
     }
 
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ApiResponse<?> handleGeneral(Exception ex) {
-        log.error("Unexpected error", ex);
-        return ApiResponse.error("An unexpected error occurred");
-    }
+//    @ExceptionHandler(Exception.class)
+//    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+//    public ApiResponse<?> handleGeneral(Exception ex) {
+//        log.error("Unexpected error", ex);
+//        return ApiResponse.error("An unexpected error occurred");
+//    }
 }

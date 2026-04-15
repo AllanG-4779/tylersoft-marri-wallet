@@ -152,7 +152,7 @@ CREATE INDEX idx_cfg_svc_mgmt_ledger_account_id    ON cfg_service_management (le
 CREATE INDEX idx_cfg_svc_mgmt_request_direction_id ON cfg_service_management (request_direction_id);
 
 
-CREATE TABLE cfg_changes
+CREATE TABLE transaction_charges_config
 (
     id                    SERIAL        PRIMARY KEY,
     min_amount            NUMERIC(19,4) DEFAULT NULL,
@@ -174,15 +174,15 @@ CREATE TABLE cfg_changes
     deleted_on            TIMESTAMPTZ   DEFAULT NULL,
     deleted_by            VARCHAR(512)  DEFAULT NULL,
 
-    CONSTRAINT fk_cfg_changes_service_management
+    CONSTRAINT fk_transaction_charges_config_service_management
         FOREIGN KEY (service_management_id) REFERENCES cfg_service_management (id) ON DELETE SET NULL,
-    CONSTRAINT fk_cfg_changes_account
+    CONSTRAINT fk_transaction_charges_config_account
         FOREIGN KEY (account_id) REFERENCES acc_accounts (id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_cfg_changes_service_management_id ON cfg_changes (service_management_id);
-CREATE INDEX idx_cfg_changes_account_id            ON cfg_changes (account_id);
-CREATE INDEX idx_cfg_changes_ledger_account_id     ON cfg_changes (ledger_account_id);
+CREATE INDEX idx_transaction_charges_config_service_management_id ON transaction_charges_config (service_management_id);
+CREATE INDEX idx_transaction_charges_config_account_id            ON transaction_charges_config (account_id);
+CREATE INDEX idx_transaction_charges_config_ledger_account_id     ON transaction_charges_config (ledger_account_id);
 
 
 CREATE TABLE tb_gl_service_mapping
@@ -247,7 +247,7 @@ CREATE TABLE trx_messages
 CREATE INDEX idx_trx_messages_service_management_id ON trx_messages (service_management_id);
 
 
-CREATE TABLE trx_transaction_charges
+CREATE TABLE trx_transaction_charges_config
 (
     id             SERIAL        PRIMARY KEY,
     esb_ref        BIGINT        DEFAULT NULL,
@@ -262,11 +262,11 @@ CREATE TABLE trx_transaction_charges
     CONSTRAINT fk_trx_charges_esb_ref
         FOREIGN KEY (esb_ref) REFERENCES trx_messages (id) ON DELETE SET NULL,
     CONSTRAINT fk_trx_charges_charge_id
-        FOREIGN KEY (charge_id) REFERENCES cfg_changes (id) ON DELETE SET NULL
+        FOREIGN KEY (charge_id) REFERENCES transaction_charges_config (id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_trx_transaction_charges_esb_ref   ON trx_transaction_charges (esb_ref);
-CREATE INDEX idx_trx_transaction_charges_charge_id ON trx_transaction_charges (charge_id);
+CREATE INDEX idx_trx_transaction_charges_config_esb_ref   ON trx_transaction_charges_config (esb_ref);
+CREATE INDEX idx_trx_transaction_charges_config_charge_id ON trx_transaction_charges_config (charge_id);
 
 CREATE TABLE trx_transaction_entries
 (

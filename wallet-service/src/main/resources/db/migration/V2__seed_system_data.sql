@@ -53,7 +53,7 @@ JOIN chn_channels   c ON c.channel_name      = 'MOBILE'
 WHERE s.transaction_type = 'FT';
 
 -- Charge config: flat fee of 30 on FT transactions
-INSERT INTO cfg_changes (
+INSERT INTO transaction_charges_config (
     min_amount, max_amount,
     charge_value, value_type, charge_type,
     receiver_narration, sender_narration,
