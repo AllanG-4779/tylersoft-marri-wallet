@@ -6,20 +6,30 @@ spring:
     name: wallet-user-management
 
   flyway:
-    url: jdbc:postgresql://localhost:5434/wallet_db
-    user: postgres
-    password: cnd80751xh
+    url: ${SPRING_FLYWAY_URL}
+    user: ${SPRING_FLYWAY_USER}
+    password: ${SPRING_FLYWAY_PASSWORD}
     schemas: users
-    locations: classpath:db/migration/users
+    locations: classpath:db/migration
     create-schemas: true
 
   r2dbc:
-    url: r2dbc:postgresql://localhost:5434/wallet_db
-    username: postgres
-    password: cnd80751xh
+    url: ${SPRING_R2DBC_URL}
+    username: ${SPRING_R2DBC_USERNAME}
+    password: ${SPRING_R2DBC_PASSWORD}
     pool:
       max-size: 10
       initial-size: 2
+
+  codec:
+    max-in-memory-size: 10MB
+
+file:
+  upload-dir: ${FILE_UPLOAD_DIR:./uploads}
+
+services:
+  wallet-service:
+    url: ${WALLET_SERVICE_URL}
 
 management:
   endpoints:

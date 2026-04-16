@@ -5,6 +5,11 @@ spring:
   application:
     name: payment-service
 
+  r2dbc:
+    url: ${SPRING_R2DBC_URL}
+    username: ${SPRING_R2DBC_USERNAME}
+    password: ${SPRING_R2DBC_PASSWORD}
+
 management:
   endpoints:
     web:
@@ -16,3 +21,10 @@ management:
   metrics:
     tags:
       application: payment-service
+
+sms:
+  username: ${SMS_USERNAME}
+  password: ${SMS_PASSWORD}
+  api-url: ${SMS_API_URL}
+  client-id: ${SMS_CLIENT_ID}
+  sender: ${SMS_SENDER}

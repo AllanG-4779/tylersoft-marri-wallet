@@ -7,21 +7,54 @@ spring:
 
   cloud:
     gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+
       routes:
-        - id: wallet-service
-          uri: http://localhost:8090
+        # ── Wallet Service ──────────────────────────────────────────────────────
+        - id: wallet-accounts
+          uri: ${WALLET_SERVICE_URL:http://localhost:8090}
           predicates:
             - Path=/api/v2/accounts/**
 
-        - id: wallet-user-management
-          uri: http://localhost:8091
+        - id: wallet-config
+          uri: ${WALLET_SERVICE_URL:http://localhost:8090}
+          predicates:
+            - Path=/api/v2/config/**
+
+        - id: wallet-transactions
+          uri: ${WALLET_SERVICE_URL:http://localhost:8090}
+          predicates:
+            - Path=/api/v2/transactions/**
+
+        - id: wallet-topup
+          uri: ${WALLET_SERVICE_URL:http://localhost:8090}
+          predicates:
+            - Path=/api/v2/topup/**
+
+        # ── Wallet User Management ───────────────────────────────────────────────
+        - id: wallet-users
+          uri: ${USER_MANAGEMENT_URL:http://localhost:8091}
           predicates:
             - Path=/api/v2/users/**
 
+        # ── Payment Service ──────────────────────────────────────────────────────
         - id: payment-service
-          uri: http://localhost:8092
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8092}
           predicates:
-            - Path=/api/v2/payments/**
+            - Path=/api/v1/third-party/**
 
 management:
   endpoints:

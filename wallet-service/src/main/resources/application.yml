@@ -3,22 +3,20 @@ server:
 
 spring:
   flyway:
-    url: jdbc:postgresql://localhost:5434/wallet_db
-    user: postgres
-    password: cnd80751xh
+    url: ${SPRING_FLYWAY_URL}
+    user: ${SPRING_FLYWAY_USER}
+    password: ${SPRING_FLYWAY_PASSWORD}
     locations: classpath:db/migration
 
-  # ── Reactive data access (R2DBC) ──────────────────────────────────────────
   r2dbc:
-    url: r2dbc:postgresql://localhost:5434/wallet_db
-    username: postgres
-    password: cnd80751xh
+    url: ${SPRING_R2DBC_URL}
+    username: ${SPRING_R2DBC_USERNAME}
+    password: ${SPRING_R2DBC_PASSWORD}
     pool:
       max-size: 20
       initial-size: 5
       max-idle-time: 30m
       max-acquire-time: 30s
-
 
 management:
   endpoints:
