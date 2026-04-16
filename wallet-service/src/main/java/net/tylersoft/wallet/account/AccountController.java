@@ -1,6 +1,7 @@
 package net.tylersoft.wallet.account;
 
 import net.tylersoft.wallet.common.ApiResponse;
+import net.tylersoft.wallet.common.UniversalRequestWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -14,13 +15,14 @@ public class AccountController {
 
     @PostMapping
     public Mono<ApiResponse<OpenAccountResult>> openAccount(
-            @RequestBody OpenAccountRequest request) {
+            @RequestBody UniversalRequestWrapper<OpenAccountRequest> request) {
 
+        OpenAccountRequest data = request.data();
         return accountOpeningService.openAccount(
-                        request.currency(),
-                        request.accountPrefix(),
-                        request.phoneNumber(),
-                        request.accountName(),
+                        data.currency(),
+                        data.accountPrefix(),
+                        data.phoneNumber(),
+                        data.accountName(),
                         "create", "")
                 .map(result -> result.isSuccess()
                         ? ApiResponse.ok(result)

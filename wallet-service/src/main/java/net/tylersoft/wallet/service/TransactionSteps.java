@@ -3,6 +3,9 @@ package net.tylersoft.wallet.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.tylersoft.wallet.charge.ChargeValueType;
+import net.tylersoft.wallet.common.TransactionStatus;
+import net.tylersoft.wallet.gateway.CardChargeRequest;
+import net.tylersoft.wallet.gateway.PaymentGatewayPort;
 import net.tylersoft.wallet.model.Account;
 import net.tylersoft.wallet.model.ChargeConfig;
 import net.tylersoft.wallet.model.ServiceManagement;
@@ -79,7 +82,7 @@ public class TransactionSteps {
             msg.setPhoneNumber(req.getPhoneNumber());
             msg.setTransactionType(req.getTransactionType());
             msg.setTotalCharge(BigDecimal.ZERO);
-            msg.setStatus((short) 0); // 0 = PENDING
+            msg.setStatus(TransactionStatus.STARTED.code());
             msg.setCreatedOn(OffsetDateTime.now());
             msg.setUpdatedOn(OffsetDateTime.now());
             return trxMessageRepository.save(msg)
@@ -277,7 +280,7 @@ public class TransactionSteps {
             TrxMessage msg = ctx.getStagedMessage();
             msg.setResponseCode(ctx.getFailureCode());
             msg.setResponseMessage(ctx.getFailureMessage());
-            msg.setStatus((short) 2); // 2 = FAILED
+            msg.setStatus(TransactionStatus.FAILED.code());
             msg.setUpdatedOn(OffsetDateTime.now());
 
             log.warn("Transaction failed ref={} code={} reason={}",
@@ -402,9 +405,151 @@ public class TransactionSteps {
         msg.setTotalCharge(totalCharge);
         msg.setResponseCode("00");
         msg.setResponseMessage("Transaction successful");
-        msg.setStatus((short) 1); // 1 = SUCCESS
+        msg.setStatus(TransactionStatus.COMPLETED.code());
         msg.setUpdatedOn(OffsetDateTime.now());
         return trxMessageRepository.save(msg);
+    }
+
+    // ── Card topup steps ─────────────────────────────────────────────────────
+
+    /**
+     * Validates the card topup transaction. Identical to {@link #validateTransaction()} except:
+     * <ul>
+     *   <li>No phone-number check on the debit side — debit is a GL/suspense account, not a customer wallet.</li>
+     *   <li>Phone-number check is performed against the <em>credit</em> (customer) account.</li>
+     *   <li>No dormant/blocked check on the debit side beyond confirming it allows debits.</li>
+     * </ul>
+     */
+    public TransactionStep validateCardTopupTransaction() {
+        return ctx -> {
+            var req = ctx.getRequest();
+            Mono<ServiceManagement> svcMono = serviceManagementRepository.findByServiceCode(req.getTransactionType())
+                    .switchIfEmpty(Mono.error(new TxException("T03", "No service configuration for type: " + req.getTransactionType())));
+            Mono<Account> debitMono = accountRepository.findByAccountNumber(req.getDebitAccount())
+                    .switchIfEmpty(Mono.error(new TxException("T01", "GL account not found: " + req.getDebitAccount())));
+            Mono<Account> creditMono = accountRepository.findByAccountNumber(req.getCreditAccount())
+                    .switchIfEmpty(Mono.error(new TxException("T02", "Credit account not found: " + req.getCreditAccount())));
+
+            return Mono.zip(debitMono, creditMono, svcMono)
+                    .flatMap(tuple -> {
+                        Account debit = tuple.getT1();
+                        Account credit = tuple.getT2();
+                        ServiceManagement svc = tuple.getT3();
+
+                        if (!Boolean.TRUE.equals(debit.getAllowDr()))
+                            return Mono.just(ctx.withFailure("T06", "GL account does not allow debits"));
+                        if (Boolean.TRUE.equals(credit.getBlocked()))
+                            return Mono.just(ctx.withFailure("T07", "Credit account is blocked"));
+                        if (Boolean.TRUE.equals(credit.getDormant()))
+                            return Mono.just(ctx.withFailure("T11", "Credit account is dormant"));
+                        if (!Boolean.TRUE.equals(credit.getAllowCr()))
+                            return Mono.just(ctx.withFailure("T08", "Credit account does not allow credits"));
+                        if (!req.getPhoneNumber().equals(credit.getPhoneNumber()))
+                            return Mono.just(ctx.withFailure("T09", "Phone number does not match wallet account"));
+
+                        log.debug("Card topup validated — gl={} credit={} service={}",
+                                debit.getAccountNumber(), credit.getAccountNumber(), svc.getServiceCode());
+                        return Mono.just(ctx.toBuilder()
+                                .debitAccount(debit)
+                                .creditAccount(credit)
+                                .serviceManagement(svc)
+                                .build());
+                    })
+                    .onErrorResume(TxException.class, ex ->
+                            Mono.just(ctx.withFailure(ex.code, ex.getMessage())));
+        };
+    }
+
+    /**
+     * Validates limits for a card topup. Skips the debit-side balance check because
+     * the debit account is a GL/suspense account funded externally by the payment gateway.
+     * Only the service-level single-transaction limit is enforced.
+     */
+    public TransactionStep validateCardTopupLimits() {
+        return ctx -> {
+            ServiceManagement svc = ctx.getServiceManagement();
+            BigDecimal amount = BigDecimal.valueOf(ctx.getRequest().getAmount());
+
+            if (exceedsLimit(amount, svc.getDailyLimit())) {
+                return Mono.just(ctx.withFailure("L02",
+                        "Amount exceeds the configured limit of " + svc.getDailyLimit()));
+            }
+
+            log.debug("Card topup limit check passed");
+            return Mono.just(ctx);
+        };
+    }
+
+    /**
+     * Calls the payment gateway to initiate the card charge. On a successful initiation
+     * the staged {@code trx_messages} row is moved to {@code CALLBACK_WAIT}. If the gateway
+     * rejects the charge immediately the context is marked as failed.
+     *
+     * @param pg the payment gateway adapter to use
+     */
+    public TransactionStep initiateCardCharge(PaymentGatewayPort pg) {
+        return ctx -> {
+            var msg = ctx.getStagedMessage();
+            var card = ctx.getCardDetails();
+
+            CardChargeRequest chargeReq = new CardChargeRequest(
+                    String.valueOf(msg.getId()),
+                    card.pan(),
+                    card.cvv(),
+                    card.expiry(),
+                    ctx.getRequest().getAmount(),
+                    ctx.getRequest().getCurrency(),
+                    ctx.getRequest().getPhoneNumber()
+            );
+
+            return pg.charge(chargeReq)
+                    .flatMap(result -> {
+                        if (result.success()) {
+                            log.info("PG charge initiated esbRef={} pgRef={}", msg.getId(), result.pgTransactionId());
+                            return asyncUpdateStatus(msg.getId(), TransactionStatus.CALLBACK_WAIT,
+                                    result.responseCode(), result.responseMessage())
+                                    .thenReturn(ctx);
+                        }
+                        log.warn("PG charge rejected esbRef={} code={}", msg.getId(), result.responseCode());
+                        return Mono.just(ctx.withFailure(result.responseCode(), result.responseMessage()));
+                    })
+                    .onErrorResume(ex -> {
+                        log.error("PG charge error for esbRef={}", msg.getId(), ex);
+                        return Mono.just(ctx.withFailure("PG01", "Payment gateway error: " + ex.getMessage()));
+                    });
+        };
+    }
+
+    // ── Async status update ───────────────────────────────────────────────────
+
+    /**
+     * Updates the status of a staged transaction outside the normal pipeline —
+     * for example when a callback arrives asynchronously after the pipeline has
+     * already returned.
+     *
+     * <p>Uses a targeted UPDATE query so the full entity does not need to be
+     * loaded and re-saved. Safe to call fire-and-forget via {@code .subscribe()}.
+     *
+     * @param esbRef          primary key of the {@code trx_messages} row
+     * @param status          new {@link TransactionStatus}
+     * @param responseCode    provider/system response code (e.g. "00", "01")
+     * @param responseMessage human-readable status description
+     * @return {@link Mono} emitting the number of rows affected (1 on success, 0 if not found)
+     */
+    public Mono<Integer> asyncUpdateStatus(Long esbRef,
+                                           TransactionStatus status,
+                                           String responseCode,
+                                           String responseMessage) {
+        log.info("Async status update esbRef={} status={} code={}", esbRef, status, responseCode);
+        return trxMessageRepository.updateStatus(esbRef, status.code(), responseCode, responseMessage)
+                .doOnSuccess(rows -> {
+                    if (rows == 0) {
+                        log.warn("asyncUpdateStatus: no row found for esbRef={}", esbRef);
+                    } else {
+                        log.debug("asyncUpdateStatus: esbRef={} updated to {}", esbRef, status);
+                    }
+                })
+                .doOnError(err -> log.error("asyncUpdateStatus failed for esbRef={}", esbRef, err));
     }
 
     // ── Private exception — carries a step-specific status code ───────────────

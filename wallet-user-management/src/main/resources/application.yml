@@ -1,0 +1,34 @@
+server:
+  port: 8091
+
+spring:
+  application:
+    name: wallet-user-management
+
+  flyway:
+    url: jdbc:postgresql://localhost:5434/wallet_db
+    user: postgres
+    password: cnd80751xh
+    schemas: users
+    locations: classpath:db/migration/users
+    create-schemas: true
+
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5434/wallet_db
+    username: postgres
+    password: cnd80751xh
+    pool:
+      max-size: 10
+      initial-size: 2
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: wallet-user-management
