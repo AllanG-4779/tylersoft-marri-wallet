@@ -13,11 +13,14 @@ import net.tylersoft.users.repository.IdentityDocumentRepository;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.reactive.TransactionalOperator;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -31,6 +34,7 @@ public class CustomerService {
     private final OtpService otpService;
     private final FileStorageService fileStorageService;
     private final WalletServiceClient walletServiceClient;
+    private final TransactionalOperator transactionalOperator;
 
     // ── Registration ──────────────────────────────────────────────────────────
 
@@ -42,13 +46,10 @@ public class CustomerService {
      * uploaded at registration time the status advances to {@code DOCUMENTS_UPLOADED}
      * as soon as the OTP is verified (see {@link #verifyOtp}).
      *
-     * @param request   the registration form data
-     * @param idFront   front-side image of the identity document
-     * @param idBack    back-side image (optional — passports may omit this)
+     * @param request     the registration form data
+     * @param webExchange the current web exchange (used to access multipart files)
      */
-    public Mono<CustomerResponse> register(RegisterRequest request,
-                                           FilePart idFront,
-                                           FilePart idBack) {
+    public Mono<CustomerResponse> register(RegisterRequest request, ServerWebExchange webExchange) {
         return Mono.zip(
                         customerRepository.existsByPhoneNumber(request.phoneNumber()),
                         customerRepository.existsByEmail(request.email())
@@ -62,7 +63,6 @@ public class CustomerService {
                                 "Email address already registered"));
 
                     Customer customer = new Customer();
-                    customer.setId(UUID.randomUUID());
                     customer.setFirstName(request.firstName());
                     customer.setLastName(request.lastName());
                     customer.setPhoneNumber(request.phoneNumber());
@@ -73,38 +73,56 @@ public class CustomerService {
                     customer.setUpdatedAt(OffsetDateTime.now());
                     return customerRepository.save(customer);
                 })
-                .flatMap(saved -> saveIdentityDocument(saved.getId(), request, idFront, idBack)
-                        .thenReturn(saved))
+                .flatMap(saved -> saveIdentityDocument(saved.getId(), getFileParts(webExchange, request.idType()))
+                        .thenReturn(saved)).as(transactionalOperator::transactional)
                 .flatMap(saved ->
                         otpService.generateAndSend(saved.getId(), saved.getPhoneNumber(),
-                                OtpPurpose.REGISTRATION.name())
+                                        OtpPurpose.REGISTRATION.name())
                                 .thenReturn(saved))
                 .map(CustomerResponse::from);
     }
 
-    private Mono<Void> saveIdentityDocument(UUID customerId, RegisterRequest request,
-                                            FilePart idFront, FilePart idBack) {
-        String subDir = customerId.toString();
 
-        Mono<String> frontUrlMono = fileStorageService.store(idFront, subDir);
-        Mono<String> backUrlMono = idBack != null
-                ? fileStorageService.store(idBack, subDir)
-                : Mono.just("");
+    private Mono<Map<String, FilePart>> getFileParts(ServerWebExchange exchange, String idType) {
+        boolean isPassport = idType.contains("PASSPORT");
 
-        return Mono.zip(frontUrlMono, backUrlMono)
-                .flatMap(urls -> {
-                    IdentityDocument doc = new IdentityDocument();
-                    doc.setId(UUID.randomUUID());
-                    doc.setCustomerId(customerId);
-                    doc.setIdType(request.idType());
-                    doc.setIdNumber(request.idNumber());
-                    doc.setFrontImageUrl(urls.getT1());
-                    doc.setBackImageUrl(urls.getT2().isBlank() ? null : urls.getT2());
-                    doc.setVerificationStatus("UPLOADED");
-                    doc.setCreatedAt(OffsetDateTime.now());
-                    doc.setUpdatedAt(OffsetDateTime.now());
-                    return identityDocumentRepository.save(doc);
-                })
+        List<String> requiredKeys = isPassport
+                ? List.of("passport", "selfie")
+                : List.of("id_front", "id_back", "selfie");
+
+        String errorMessage = isPassport
+                ? "Passport image is required"
+                : "id_front, id_back and selfie images are required";
+
+        return exchange.getMultipartData()
+                .flatMap(parts -> {
+                    if (!parts.keySet().containsAll(requiredKeys)) {
+                        return Mono.error(new IllegalArgumentException(errorMessage));
+                    }
+                    Map<String, FilePart> files = requiredKeys.stream()
+                            .collect(Collectors.toMap(
+                                    key -> key,
+                                    key -> (FilePart) parts.getFirst(key)
+                            ));
+                    return Mono.just(files);
+                });
+    }
+
+    private Mono<Void> saveIdentityDocument(UUID customerId, Mono<Map<String, FilePart>> filePartsMono) {
+        return filePartsMono
+                .flatMapMany(parts -> Flux.fromIterable(parts.entrySet()))
+                .flatMap(entry -> fileStorageService.store(entry.getValue(), customerId.toString())
+                        .flatMap(url -> {
+                            IdentityDocument doc = new IdentityDocument();
+                            doc.setCustomerId(customerId);
+                            doc.setIdType(entry.getKey());
+                            doc.setFrontImageUrl(url);
+                            doc.setVerificationStatus("UPLOADED");
+                            doc.setCreatedAt(OffsetDateTime.now());
+                            doc.setUpdatedAt(OffsetDateTime.now());
+                            return identityDocumentRepository.save(doc);
+                        })
+                )
                 .then();
     }
 
@@ -150,77 +168,19 @@ public class CustomerService {
                                 request.purpose()));
     }
 
-    // ── KYC document upload ───────────────────────────────────────────────────
-
-    /**
-     * Persists the uploaded ID document images and creates an
-     * {@code identity_documents} row. Advances the customer to
-     * {@code DOCUMENTS_UPLOADED}.
-     *
-     * @param customerId  the customer's UUID
-     * @param idType      e.g. NATIONAL_ID, PASSPORT, DRIVING_LICENSE
-     * @param idNumber    the document number (optional at this stage)
-     * @param frontImage  front-side image file part
-     * @param backImage   back-side image file part (nullable for passports)
-     */
-    public Mono<DocumentResponse> uploadDocuments(UUID customerId,
-                                                  String idType,
-                                                  String idNumber,
-                                                  FilePart frontImage,
-                                                  FilePart backImage) {
-        return customerRepository.findById(customerId)
-                .switchIfEmpty(Mono.error(new IllegalArgumentException(
-                        "Customer not found: " + customerId)))
-                .flatMap(customer -> {
-                    String subDir = customerId.toString();
-
-                    Mono<String> frontUrlMono = fileStorageService.store(frontImage, subDir);
-                    Mono<String> backUrlMono = backImage != null
-                            ? fileStorageService.store(backImage, subDir)
-                            : Mono.just("");
-
-                    return Mono.zip(frontUrlMono, backUrlMono)
-                            .flatMap(urls -> {
-                                IdentityDocument doc = new IdentityDocument();
-                                doc.setId(UUID.randomUUID());
-                                doc.setCustomerId(customerId);
-                                doc.setIdType(idType);
-                                doc.setIdNumber(idNumber);
-                                doc.setFrontImageUrl(urls.getT1());
-                                doc.setBackImageUrl(urls.getT2().isBlank() ? null : urls.getT2());
-                                doc.setVerificationStatus("UPLOADED");
-                                doc.setCreatedAt(OffsetDateTime.now());
-                                doc.setUpdatedAt(OffsetDateTime.now());
-
-                                return identityDocumentRepository.save(doc)
-                                        .flatMap(saved -> {
-                                            customer.setStatus(CustomerStatus.DOCUMENTS_UPLOADED.name());
-                                            customer.setStatusChangedAt(OffsetDateTime.now());
-                                            customer.setUpdatedAt(OffsetDateTime.now());
-                                            return customerRepository.save(customer)
-                                                    .thenReturn(saved);
-                                        });
-                            });
-                })
-                .map(DocumentResponse::from);
-    }
 
     // ── Set PIN ───────────────────────────────────────────────────────────────
 
     public Mono<CustomerResponse> setPin(UUID customerId, SetPinRequest request) {
         return customerRepository.findById(customerId)
-                .switchIfEmpty(Mono.error(new IllegalArgumentException(
-                        "Customer not found: " + customerId)))
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Customer not found: " + customerId)))
+                .filter(customer -> !CustomerStatus.INITIATED.name().equals(customer.getStatus()))
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Phone number must be verified before setting a PIN")))
                 .flatMap(customer -> {
-                    if (CustomerStatus.INITIATED.name().equals(customer.getStatus()))
-                        return Mono.error(new IllegalArgumentException(
-                                "Phone number must be verified before setting a PIN"));
-
                     customer.setPinHash(pinEncoder.encode(request.pin()));
                     customer.setUpdatedAt(OffsetDateTime.now());
 
-                    boolean shouldActivate =
-                            CustomerStatus.DOCUMENTS_UPLOADED.name().equals(customer.getStatus())
+                    boolean shouldActivate = CustomerStatus.DOCUMENTS_UPLOADED.name().equals(customer.getStatus())
                             || CustomerStatus.KYC_VERIFIED.name().equals(customer.getStatus());
 
                     if (shouldActivate) {
@@ -229,33 +189,68 @@ public class CustomerService {
                     }
 
                     return customerRepository.save(customer)
-                            .flatMap(saved -> {
-                                if (!shouldActivate) return Mono.just(saved);
-
-                                String accountName = saved.getFirstName() + " " + saved.getLastName();
-                                return walletServiceClient
-                                        .createWalletAccount(saved.getPhoneNumber(), accountName, "KES")
-                                        .doOnSuccess(accountNo -> log.info(
-                                                "Wallet account opened: customerId={} accountNo={}",
-                                                customerId, accountNo))
-                                        .onErrorResume(err -> {
-                                            log.error("Wallet account creation failed for customerId={}: {}",
-                                                    customerId, err.getMessage());
-                                            return Mono.empty();
-                                        })
-                                        .thenReturn(saved);
-                            });
+                            .flatMap(saved -> shouldActivate ? createWalletFor(saved) : Mono.just(saved));
                 })
                 .map(CustomerResponse::from);
     }
 
-    // ── Profile ───────────────────────────────────────────────────────────────
+    public Mono<Customer> createWalletFor(Customer customer) {
+        String accountName = customer.getFirstName() + " " + customer.getLastName();
+        return walletServiceClient
+                .createWalletAccount(customer.getPhoneNumber(), accountName, "KES")
+                .doOnSuccess(accountNo -> log.info(
+                        "Wallet account opened: customerId={} accountNo={}", customer.getId(), accountNo))
+                .thenReturn(customer) // ← keeps return type as Mono<Customer>
+                .onErrorResume(err -> {
+                    log.error("Wallet account creation failed for customerId={}: {}",
+                            customer.getId(), err.getMessage());
+                    customer.setStatus(CustomerStatus.WALLET_CREATION_FAILED.name());
+                    customer.setStatusChangedAt(OffsetDateTime.now());
+                    customer.setStatusReason(err.getMessage().substring(0, Math.min(err.getMessage().length(), 100)));
+                    return customerRepository.save(customer);
+                });
+    }
+
+    // ── Profile / Lookup ─────────────────────────────────────────────────────
 
     public Mono<CustomerResponse> getProfile(UUID customerId) {
         return customerRepository.findById(customerId)
                 .switchIfEmpty(Mono.error(new IllegalArgumentException(
                         "Customer not found: " + customerId)))
                 .map(CustomerResponse::from);
+    }
+
+
+
+    public Mono<CustomerResponse> lookupByPhoneNumber(String phoneNumber) {
+        return customerRepository.findByPhoneNumber(phoneNumber)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException(
+                        "Customer not found for phone: " + phoneNumber)))
+                .flatMap(this::retryWalletIfNeeded)
+                .map(CustomerResponse::from);
+    }
+
+    private Mono<Customer> retryWalletIfNeeded(Customer customer) {
+        if (!CustomerStatus.WALLET_CREATION_FAILED.name().equals(customer.getStatus()))
+            return Mono.just(customer);
+
+        String accountName = customer.getFirstName() + " " + customer.getLastName();
+        return walletServiceClient
+                .createWalletAccount(customer.getPhoneNumber(), accountName, "KES")
+                .flatMap(accountNo -> {
+                    log.info("Wallet retry succeeded: customerId={} accountNo={}", customer.getId(), accountNo);
+                    customer.setStatus(CustomerStatus.ACTIVE.name());
+                    customer.setStatusChangedAt(OffsetDateTime.now());
+                    customer.setStatusReason(null);
+                    customer.setUpdatedAt(OffsetDateTime.now());
+                    return customerRepository.save(customer);
+                })
+                .onErrorResume(err -> {
+                    log.warn("Wallet retry failed for customerId={}: {}", customer.getId(), err.getMessage());
+                    customer.setStatusReason("Wallet retry failed: " + err.getMessage().substring(0, Math.min(err.getMessage().length(), 100)));
+                    customer.setUpdatedAt(OffsetDateTime.now());
+                   return customerRepository.save(customer);
+                });
     }
 
     public Flux<DocumentResponse> getDocuments(UUID customerId) {

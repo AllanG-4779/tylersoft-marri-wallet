@@ -1,5 +1,7 @@
 package net.tylersoft.users.common;
 
+import javax.tools.Tool;
+
 public enum CustomerStatus {
     /** Record created, OTP not yet verified. */
     INITIATED,
@@ -12,5 +14,6 @@ public enum CustomerStatus {
     /** Fully onboarded and operational. */
     ACTIVE,
     SUSPENDED,
-    CLOSED
+    CLOSED,
+     WALLET_CREATION_FAILED
 }

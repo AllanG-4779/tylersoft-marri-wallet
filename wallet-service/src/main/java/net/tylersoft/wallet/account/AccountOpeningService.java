@@ -65,7 +65,9 @@ public class AccountOpeningService {
                     log.info("Checking accountType for prefix {}: found {}", accountPrefix, each.getId());
                     return accountRepository.countAllByPhoneNumberAndAccountTypeId(phoneNumber, each.getId())
                             .flatMap(count -> {
-                                if (count > each.getMaxAccounts()) {
+                                if (count >= each.getMaxAccounts()) {
+                                    log.info("Account limit reached for phone {} and accountType {}: count={}",
+                                            phoneNumber, each.getId(), count);
                                     return Mono.error(new OpenAccountException("01", "Account limit reached for this account type"));
                                 }
                                 return Mono.just(each);

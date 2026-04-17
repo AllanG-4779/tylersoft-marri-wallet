@@ -17,8 +17,8 @@ public record RegisterRequest(
 
         @NotBlank(message = "Phone number is required")
         @Pattern(
-                regexp = "^\\+?[1-9]\\d{7,14}$",
-                message = "Phone number must be a valid international format, e.g. +254712345678"
+                regexp = "^[1-9]\\d{7,14}$",
+                message = "Phone number must be a valid international format, e.g. 254712345678"
         )
         String phoneNumber,
 

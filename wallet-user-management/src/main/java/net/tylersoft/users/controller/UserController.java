@@ -3,6 +3,7 @@ package net.tylersoft.users.controller;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
+import net.tylersoft.common.http.dto.LookupRequest;
 import net.tylersoft.users.common.ApiResponse;
 import net.tylersoft.users.dto.*;
 import net.tylersoft.users.service.CustomerService;
@@ -11,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -26,7 +28,6 @@ public class UserController {
     private final CustomerService customerService;
     private final Validator validator;
 
-    // ── Registration ──────────────────────────────────────────────────────────
 
     /**
      * Step 1 — Register a new customer.
@@ -47,15 +48,13 @@ public class UserController {
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<ApiResponse<CustomerResponse>> register(
             @RequestPart("data") RegisterRequest request,
-            @RequestPart("id_front") FilePart idFront,
-            @RequestPart(value = "id_back", required = false) FilePart idBack) {
+            ServerWebExchange serverWebExchange) {
 
         return validate(request)
-                .then(customerService.register(request, idFront, idBack))
+                .then(customerService.register(request, serverWebExchange))
                 .map(r -> ApiResponse.ok("Registration successful. OTP sent to " + request.phoneNumber(), r));
     }
 
-    // ── OTP ───────────────────────────────────────────────────────────────────
 
     /**
      * Step 2 — Verify the OTP sent to the customer's phone.
@@ -79,52 +78,7 @@ public class UserController {
                 .thenReturn(ApiResponse.<Void>ok("OTP resent successfully", null));
     }
 
-    // ── KYC documents ─────────────────────────────────────────────────────────
 
-    /**
-     * Step 3 — Upload identity document images.
-     *
-     * <pre>
-     * POST /api/v2/users/{customerId}/kyc/documents
-     * Content-Type: multipart/form-data
-     *
-     * idType      = NATIONAL_ID          (NATIONAL_ID | PASSPORT | DRIVING_LICENSE)
-     * idNumber    = 12345678             (optional)
-     * frontImage  = &lt;file&gt;
-     * backImage   = &lt;file&gt;              (optional — not required for passports)
-     * </pre>
-     *
-     * On success the customer advances to {@code DOCUMENTS_UPLOADED}.
-     */
-    @PostMapping(value = "/{customerId}/kyc/documents",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ResponseStatus(HttpStatus.CREATED)
-    public Mono<ApiResponse<DocumentResponse>> uploadDocuments(
-            @PathVariable UUID customerId,
-            @RequestPart("idType") String idType,
-            @RequestPart(value = "idNumber", required = false) String idNumber,
-            @RequestPart("frontImage") FilePart frontImage,
-            @RequestPart(value = "backImage", required = false) FilePart backImage) {
-
-        if (!idType.matches("NATIONAL_ID|PASSPORT|DRIVING_LICENSE")) {
-            return Mono.just(ApiResponse.error(
-                    "idType must be one of: NATIONAL_ID, PASSPORT, DRIVING_LICENSE"));
-        }
-        if (frontImage == null) {
-            return Mono.just(ApiResponse.error("frontImage is required"));
-        }
-
-        return customerService.uploadDocuments(customerId, idType, idNumber, frontImage, backImage)
-                .map(r -> ApiResponse.ok("Documents uploaded successfully", r));
-    }
-
-    // ── PIN setup ─────────────────────────────────────────────────────────────
-
-    /**
-     * Step 4 — Set the wallet PIN.
-     * Requires {@code PHONE_VERIFIED} or higher status.
-     * When documents are already uploaded the customer moves to {@code ACTIVE}.
-     */
     @PostMapping("/{customerId}/set-pin")
     public Mono<ApiResponse<CustomerResponse>> setPin(
             @PathVariable UUID customerId,
@@ -141,6 +95,15 @@ public class UserController {
                 .map(ApiResponse::ok);
     }
 
+
+
+    @PostMapping("/lookup")
+    public Mono<ApiResponse<CustomerResponse>> lookupByPhone(
+          @RequestBody LookupRequest request) {
+        return customerService.lookupByPhoneNumber(request.phoneNumber())
+                .map(ApiResponse::ok);
+    }
+
     @GetMapping("/{customerId}/kyc/documents")
     public Mono<ApiResponse<List<DocumentResponse>>> getDocuments(@PathVariable UUID customerId) {
         return customerService.getDocuments(customerId)
@@ -148,7 +111,6 @@ public class UserController {
                 .map(ApiResponse::ok);
     }
 
-    // ── Validation helper ─────────────────────────────────────────────────────
 
     /**
      * Programmatically validates any bean against its constraint annotations.

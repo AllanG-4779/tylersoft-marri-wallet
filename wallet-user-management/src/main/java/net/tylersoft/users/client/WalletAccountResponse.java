@@ -4,7 +4,7 @@ package net.tylersoft.users.client;
  * Mirrors the {@code ApiResponse<OpenAccountResult>} returned by the wallet-service.
  */
 public record WalletAccountResponse(
-        boolean success,
+        Boolean success,
         String message,
         AccountResult data
 ) {

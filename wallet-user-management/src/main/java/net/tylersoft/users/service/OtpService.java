@@ -32,7 +32,6 @@ public class OtpService {
         String hash = encoder.encode(otp);
 
         OtpVerification record = new OtpVerification();
-        record.setId(UUID.randomUUID());
         record.setCustomerId(customerId);
         record.setPhoneNumber(phoneNumber);
         record.setOtpHash(hash);

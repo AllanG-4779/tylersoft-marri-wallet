@@ -24,7 +24,7 @@ public record CreateWalletAccountRequest(
                                                 String accountName,
                                                 String currency) {
         return new CreateWalletAccountRequest(
-                new AccountData(currency, "WA", phoneNumber, accountName, BigDecimal.ZERO),
+                new AccountData(currency, "TA", phoneNumber, accountName, BigDecimal.ZERO),
                 new ChannelDetails("wallet-user-management")
         );
     }

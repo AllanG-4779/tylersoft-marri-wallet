@@ -10,6 +10,7 @@ spring:
     user: ${SPRING_FLYWAY_USER}
     password: ${SPRING_FLYWAY_PASSWORD}
     schemas: users
+
     locations: classpath:db/migration
     create-schemas: true
 
