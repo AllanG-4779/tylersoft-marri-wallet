@@ -35,6 +35,13 @@ sms:
   client-id: ${SMS_CLIENT_ID}
   sender: ${SMS_SENDER}
 
+intercape:
+  base-url: ${INTERCAPE_BASE_URL}
+  username: ${INTERCAPE_USERNAME}
+  password: ${INTERCAPE_PASSWORD}
+  client-id: ${INTERCAPE_CLIENT_ID}
+  service-id: ${INTERCAPE_SERVICE_ID:1006}
+
 billing:
   base-url: ${BILLING_BASE_URL}
   default-base-url: /v2/api/send
