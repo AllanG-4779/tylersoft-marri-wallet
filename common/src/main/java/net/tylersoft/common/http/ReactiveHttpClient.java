@@ -1,19 +1,26 @@
 package net.tylersoft.common.http;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 @Component
 @RequiredArgsConstructor
 public class ReactiveHttpClient {
 
     private final WebClient webClient;
+
+    @Value("${http.client.timeout-seconds:10}")
+    private long timeoutSeconds;
 
     private  <T, R> Mono<R> sendRequest(
             String url,
@@ -45,20 +52,26 @@ public class ReactiveHttpClient {
 
         return responseSpec
                 .onStatus(
-                        status -> status.is4xxClientError(),
+                        HttpStatusCode::is4xxClientError,
                         response -> response.bodyToMono(String.class)
                                 .flatMap(error -> Mono.error(
                                         new RuntimeException("Client Error: " + error)
                                 ))
                 )
+
                 .onStatus(
-                        status -> status.is5xxServerError(),
+                        HttpStatusCode::is5xxServerError,
                         response -> response.bodyToMono(String.class)
                                 .flatMap(error -> Mono.error(
                                         new RuntimeException("Server Error: " + error)
                                 ))
                 )
-                .bodyToMono(responseType);
+                .bodyToMono(responseType)
+                .timeout(Duration.ofSeconds(timeoutSeconds))
+                .onErrorMap(
+                        java.util.concurrent.TimeoutException.class,
+                        ex -> new TimeoutException("Request timed out after " + timeoutSeconds + "s: " + ex.getMessage())
+                );
     }
 
     public <T, R> Mono<R> post(String url, T body, Class<R> responseType) {

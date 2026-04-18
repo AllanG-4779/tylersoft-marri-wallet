@@ -1,4 +1,4 @@
-package net.tylersoft.users.common;
+package net.tylersoft.common.http.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
