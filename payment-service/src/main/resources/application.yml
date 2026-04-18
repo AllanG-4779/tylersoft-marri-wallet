@@ -5,6 +5,12 @@ spring:
   application:
     name: payment-service
 
+  flyway:
+    url: ${SPRING_FLYWAY_URL}
+    user: ${SPRING_FLYWAY_USER}
+    password: ${SPRING_FLYWAY_PASSWORD}
+    locations: classpath:db/migration
+
   r2dbc:
     url: ${SPRING_R2DBC_URL}
     username: ${SPRING_R2DBC_USERNAME}
@@ -28,3 +34,28 @@ sms:
   api-url: ${SMS_API_URL}
   client-id: ${SMS_CLIENT_ID}
   sender: ${SMS_SENDER}
+
+billing:
+  base-url: ${BILLING_BASE_URL}
+  default-base-url: /v2/api/send
+  username: ${BILLING_USERNAME}
+  password: ${BILLING_PASSWORD}
+  client-id: ${BILLING_CLIENT_ID}
+  services:
+    - service-code: BPC_TRANSACTION
+      service-id: "1005"
+      endpoint: /v2/api/send
+    - service-code: ACCESS_TOKEN
+      endpoint: /api/access_token
+    - service-code: BPC_PRESENTMENT
+      endpoint: /api/Confirm_BPC_Customer
+    - service-code: DSTV
+      service-id: "1001"
+    - service-code: AIRTIME_ORANGE
+      service-id: "1004"
+    - service-code: AIRTIME_BTC
+      service-id: "1003"
+    - service-code: AIRTIME_MASCOM
+      service-id: "1002"
+    - service-code: INTERCAPE
+      service-id: "1006"

@@ -65,8 +65,16 @@ public class ReactiveHttpClient {
         return sendRequest(url, HttpMethod.POST, null, body, responseType);
     }
 
+    public <T, R> Mono<R> post(String url, Map<String, String> headers, T body, Class<R> responseType) {
+        return sendRequest(url, HttpMethod.POST, headers, body, responseType);
+    }
+
     public <R> Mono<R> get(String url, Class<R> responseType) {
         return sendRequest(url, HttpMethod.GET, null, null, responseType);
+    }
+
+    public <R> Mono<R> get(String url, Map<String, String> headers, Class<R> responseType) {
+        return sendRequest(url, HttpMethod.GET, headers, null, responseType);
     }
 }
 
