@@ -11,64 +11,6 @@ spring:
         jwt:
           jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8093}/.well-known/jwks.json
 
-  cloud:
-    gateway:
-      default-filters:
-        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
-        - TokenRelay=
-      globalcors:
-        corsConfigurations:
-          '[/**]':
-            allowedOrigins: "*"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - PATCH
-              - DELETE
-              - OPTIONS
-            allowedHeaders: "*"
-
-      routes:
-        # ── Wallet Service ──────────────────────────────────────────────────────
-        - id: wallet-accounts
-          uri: ${WALLET_SERVICE_URL:http://localhost:8090}
-          predicates:
-            - Path=/api/v2/accounts/**
-
-        - id: wallet-config
-          uri: ${WALLET_SERVICE_URL:http://localhost:8090}
-          predicates:
-            - Path=/api/v2/config/**
-
-        - id: wallet-transactions
-          uri: ${WALLET_SERVICE_URL:http://localhost:8090}
-          predicates:
-            - Path=/api/v2/transactions/**
-
-        - id: wallet-topup
-          uri: ${WALLET_SERVICE_URL:http://localhost:8090}
-          predicates:
-            - Path=/api/v2/topup/**
-
-        # ── Wallet User Management ───────────────────────────────────────────────
-        - id: wallet-users
-          uri: ${USER_MANAGEMENT_URL:http://localhost:8091}
-          predicates:
-            - Path=/api/v2/users/**
-
-        # ── Payment Service ──────────────────────────────────────────────────────
-        - id: payment-service
-          uri: ${PAYMENT_SERVICE_URL:http://localhost:8092}
-          predicates:
-            - Path=/api/v1/third-party/**,/api/v1/billing/**,/api/v1/intercape/**
-
-        # ── Auth Service ─────────────────────────────────────────────────────────
-        - id: auth-service
-          uri: ${AUTH_SERVICE_URL:http://localhost:8093}
-          predicates:
-            - Path=/api/v1/auth/**,/.well-known/jwks.json
-
 management:
   endpoints:
     web:
