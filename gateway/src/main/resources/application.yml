@@ -11,6 +11,12 @@ spring:
         jwt:
           jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8093}/.well-known/jwks.json
 
+services:
+  auth-url: ${AUTH_SERVICE_URL:http://localhost:8093}
+  user-url: ${USER_SERVICE_URL:http://localhost:8091}
+  wallet-url: ${WALLET_SERVICE_URL:http://localhost:8090}
+  payment-url: ${PAYMENT_SERVICE_URL:http://localhost:8092}
+
 management:
   endpoints:
     web:
