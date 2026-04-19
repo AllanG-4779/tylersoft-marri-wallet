@@ -22,7 +22,7 @@ services:
 
   # ── Auth Service ────────────────────────────────────────────────────────────
   auth-service:
-    image: dockerallang/auth-service:1.0.0
+    image: dockerallang/auth-service:latest
     build:
       context: .
       dockerfile: auth-service/Dockerfile
@@ -48,7 +48,7 @@ services:
 
   # ── Wallet Service ───────────────────────────────────────────────────────────
   wallet-service:
-    image: dockerallang/wallet-service:1.0.0
+    image: dockerallang/wallet-service:latest
     build:
       context: .
       dockerfile: wallet-service/Dockerfile
@@ -79,7 +79,7 @@ services:
 
   # ── Wallet User Management ───────────────────────────────────────────────────
   wallet-user-management:
-    image: dockerallang/wallet-user-management:1.0.0
+    image: dockerallang/wallet-user-management:latest
     build:
       context: .
       dockerfile: wallet-user-management/Dockerfile
@@ -113,7 +113,7 @@ services:
 
   # ── Payment Service ──────────────────────────────────────────────────────────
   payment-service:
-    image: dockerallang/payment-service:1.0.0
+    image: dockerallang/payment-service:latest
     build:
       context: .
       dockerfile: payment-service/Dockerfile
@@ -139,7 +139,7 @@ services:
 
   # ── API Gateway ──────────────────────────────────────────────────────────────
   gateway:
-    image: dockerallang/gateway:1.0.0
+    image: dockerallang/gateway:latest
     build:
       context: .
       dockerfile: gateway/Dockerfile
