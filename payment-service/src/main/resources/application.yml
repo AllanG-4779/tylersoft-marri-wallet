@@ -15,7 +15,11 @@ spring:
     url: ${SPRING_R2DBC_URL}
     username: ${SPRING_R2DBC_USERNAME}
     password: ${SPRING_R2DBC_PASSWORD}
-
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8093}/.well-known/jwks.json
 management:
   endpoints:
     web:
@@ -35,12 +39,6 @@ sms:
   client-id: ${SMS_CLIENT_ID}
   sender: ${SMS_SENDER}
 
-spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8093}/.well-known/jwks.json
 
 intercape:
   base-url: ${INTERCAPE_BASE_URL:https://www.paybills.co.bw:8601/ecommerce/intercape}
