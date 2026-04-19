@@ -53,6 +53,7 @@ public class BillerEngineClient {
 
     public Mono<BpcMeterResponse> confirmMeter(String url, String meterNumber) {
         var request = new BpcMeterRequest(meterNumber, props.getClientId());
+
         return getAccessToken()
                 .flatMap(token -> logService.save(meterNumber, "BPC_PRESENTMENT", url, request)
                         .flatMap(savedLog -> httpClient

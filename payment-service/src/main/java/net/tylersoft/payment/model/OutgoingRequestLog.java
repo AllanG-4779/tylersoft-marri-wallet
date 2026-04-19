@@ -25,6 +25,8 @@ public class OutgoingRequestLog {
     private String responseCode;
     private String status;
     private String errorMessage;
+    private String callbackPayload;
     private OffsetDateTime createdOn;
     private OffsetDateTime updatedOn;
+    private OffsetDateTime callbackReceivedOn;
 }

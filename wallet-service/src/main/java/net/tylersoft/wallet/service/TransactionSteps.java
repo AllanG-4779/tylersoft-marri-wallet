@@ -223,7 +223,7 @@ public class TransactionSteps {
      *   <li>Writes DR + CR entries to {@code trx_transaction_entries}.</li>
      *   <li>Writes one row per charge to {@code trx_transaction_charges}.</li>
      *   <li>Updates available and actual balances on both accounts.</li>
-     *   <li>Marks the staged {@code trx_messages} row as successful (status=1, responseCode=00).</li>
+     *   <li>Marks the staged {@code trx_messages} row as successful (status=1, status=00).</li>
      * </ol>
      */
     public TransactionStep post() {

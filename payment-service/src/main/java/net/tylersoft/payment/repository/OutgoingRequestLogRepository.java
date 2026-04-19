@@ -7,4 +7,6 @@ import reactor.core.publisher.Mono;
 public interface OutgoingRequestLogRepository extends R2dbcRepository<OutgoingRequestLog, Long> {
 
     Mono<OutgoingRequestLog> findTopByReferenceIdOrderByCreatedOnDesc(String referenceId);
+
+    Mono<OutgoingRequestLog> findTopByReferenceIdAndStatusOrderByCreatedOnDesc(String referenceId, String status);
 }

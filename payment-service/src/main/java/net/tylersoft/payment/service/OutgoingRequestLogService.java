@@ -70,7 +70,8 @@ public class OutgoingRequestLogService {
         return repository.findTopByReferenceIdOrderByCreatedOnDesc(referenceId)
                 .flatMap(entry -> {
                     entry.setStatus("CALLBACK_RECEIVED");
-                    entry.setResponsePayload(callbackPayload);
+                    entry.setCallbackPayload(callbackPayload);
+                    entry.setCallbackReceivedOn(OffsetDateTime.now());
                     entry.setUpdatedOn(OffsetDateTime.now());
                     return repository.save(entry);
                 })
@@ -79,6 +80,11 @@ public class OutgoingRequestLogService {
                     return Mono.empty();
                 })
                 .then();
+    }
+
+    public Mono<OutgoingRequestLog> getCallbackStatus(String referenceId) {
+        return repository.findTopByReferenceIdAndStatusOrderByCreatedOnDesc(referenceId, "CALLBACK_RECEIVED")
+                .switchIfEmpty(repository.findTopByReferenceIdOrderByCreatedOnDesc(referenceId));
     }
 
     private String toJson(Object obj) {

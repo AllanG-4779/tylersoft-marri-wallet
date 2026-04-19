@@ -2,6 +2,12 @@ server:
   port: 8090
 
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8093}/.well-known/jwks.json
+
   flyway:
     url: ${SPRING_FLYWAY_URL}
     user: ${SPRING_FLYWAY_USER}
@@ -29,6 +35,10 @@ management:
   metrics:
     tags:
       application: wallet-service
+
+service:
+  username: ${SERVICE_USERNAME:wallet-svc}
+  password: ${SERVICE_PASSWORD}
 
 logging:
   level:

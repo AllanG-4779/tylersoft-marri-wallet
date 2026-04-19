@@ -1,8 +1,8 @@
 package net.tylersoft.wallet.config;
 
 import lombok.RequiredArgsConstructor;
-import net.tylersoft.wallet.common.ApiResponse;
-import net.tylersoft.wallet.common.UniversalRequestWrapper;
+import net.tylersoft.common.http.dto.UniversalRequestWrapper;
+import net.tylersoft.common.http.dto.ApiResponse;
 import net.tylersoft.wallet.model.ChargeConfig;
 import net.tylersoft.wallet.model.ServiceManagement;
 import org.springframework.web.bind.annotation.*;

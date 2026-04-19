@@ -1,0 +1,32 @@
+server:
+  port: 8093
+
+spring:
+  application:
+    name: auth-service
+
+  r2dbc:
+    url: ${SPRING_R2DBC_URL}
+    username: ${SPRING_R2DBC_USERNAME}
+    password: ${SPRING_R2DBC_PASSWORD}
+
+# RSA key paths — omit for ephemeral dev keys (NOT for production).
+# In production set these to point to your PEM files:
+#   JWT_PRIVATE_KEY_PATH=file:/secrets/private.pem
+#   JWT_PUBLIC_KEY_PATH=file:/secrets/public.pem
+jwt:
+  private-key-path: ${JWT_PRIVATE_KEY_PATH:#{null}}
+  public-key-path: ${JWT_PUBLIC_KEY_PATH:#{null}}
+  expiry-hours: ${JWT_EXPIRY_HOURS:24}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: auth-service

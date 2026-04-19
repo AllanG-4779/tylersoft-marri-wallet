@@ -17,6 +17,7 @@
 
     <modules>
         <module>common</module>
+        <module>auth-service</module>
         <module>wallet-service</module>
         <module>wallet-user-management</module>
         <module>payment-service</module>

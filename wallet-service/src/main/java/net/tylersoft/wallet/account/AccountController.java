@@ -1,7 +1,7 @@
 package net.tylersoft.wallet.account;
 
-import net.tylersoft.wallet.common.ApiResponse;
-import net.tylersoft.wallet.common.UniversalRequestWrapper;
+import net.tylersoft.common.http.dto.UniversalRequestWrapper;
+import net.tylersoft.common.http.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;

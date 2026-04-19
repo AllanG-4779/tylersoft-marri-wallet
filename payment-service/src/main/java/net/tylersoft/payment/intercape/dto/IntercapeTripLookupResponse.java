@@ -9,7 +9,9 @@ import java.util.List;
 public record IntercapeTripLookupResponse(
         @JsonProperty("Content") Content content,
         @JsonProperty("TransactionId") String transactionId,
-        @JsonProperty("Serviceid") String serviceId
+        @JsonProperty("Serviceid") String serviceId,
+        @JsonProperty("ErrorCode") String errorCode,
+        @JsonProperty("ErrorMessage") String errorMessage
 ) {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Content(@JsonProperty("Trip") List<Trip> trips) {}

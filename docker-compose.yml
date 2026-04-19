@@ -20,8 +20,35 @@ services:
       retries: 5
       start_period: 10s
 
+  # ── Auth Service ────────────────────────────────────────────────────────────
+  auth-service:
+    image: dockerallang/auth-service:1.0.0
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8093:8093"
+    environment:
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/wallet_users_db
+      SPRING_R2DBC_USERNAME: postgres
+      SPRING_R2DBC_PASSWORD: cnd80751xh
+      # For production, set these to your PEM file paths:
+      # JWT_PRIVATE_KEY_PATH: file:/secrets/private.pem
+      # JWT_PUBLIC_KEY_PATH: file:/secrets/public.pem
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8093/actuator/health | grep -q UP || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
   # ── Wallet Service ───────────────────────────────────────────────────────────
   wallet-service:
+    image: dockerallang/wallet-service:1.0.0
     build:
       context: .
       dockerfile: wallet-service/Dockerfile
@@ -35,7 +62,12 @@ services:
       SPRING_FLYWAY_URL: jdbc:postgresql://postgres:5432/wallet_db
       SPRING_FLYWAY_USER: postgres
       SPRING_FLYWAY_PASSWORD: cnd80751xh
+      AUTH_SERVICE_URL: http://auth-service:8093
+      SERVICE_USERNAME: wallet-svc
+      SERVICE_PASSWORD: ${WALLET_SVC_PASSWORD:-changeme}
     depends_on:
+      auth-service:
+        condition: service_healthy
       postgres:
         condition: service_healthy
     healthcheck:
@@ -47,6 +79,7 @@ services:
 
   # ── Wallet User Management ───────────────────────────────────────────────────
   wallet-user-management:
+    image: dockerallang/wallet-user-management:1.0.0
     build:
       context: .
       dockerfile: wallet-user-management/Dockerfile
@@ -63,7 +96,12 @@ services:
       SPRING_FLYWAY_SCHEMAS: users
       FILE_UPLOAD_DIR: /app/uploads
       WALLET_SERVICE_URL: http://wallet-service:8090
+      AUTH_SERVICE_URL: http://auth-service:8093
+      WALLET_SVC_CLIENT_USERNAME: wallet-svc
+      WALLET_SVC_CLIENT_PASSWORD: ${WALLET_SVC_PASSWORD:-changeme}
     depends_on:
+      auth-service:
+        condition: service_healthy
       postgres:
         condition: service_healthy
     healthcheck:
@@ -75,6 +113,7 @@ services:
 
   # ── Payment Service ──────────────────────────────────────────────────────────
   payment-service:
+    image: dockerallang/payment-service:1.0.0
     build:
       context: .
       dockerfile: payment-service/Dockerfile
@@ -85,7 +124,10 @@ services:
       SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/payment_db
       SPRING_R2DBC_USERNAME: postgres
       SPRING_R2DBC_PASSWORD: cnd80751xh
+      AUTH_SERVICE_URL: http://auth-service:8093
     depends_on:
+      auth-service:
+        condition: service_healthy
       postgres:
         condition: service_healthy
     healthcheck:
@@ -97,6 +139,7 @@ services:
 
   # ── API Gateway ──────────────────────────────────────────────────────────────
   gateway:
+    image: dockerallang/gateway:1.0.0
     build:
       context: .
       dockerfile: gateway/Dockerfile
@@ -107,7 +150,10 @@ services:
       WALLET_SERVICE_URL: http://wallet-service:8090
       USER_MANAGEMENT_URL: http://wallet-user-management:8091
       PAYMENT_SERVICE_URL: http://payment-service:8092
+      AUTH_SERVICE_URL: http://auth-service:8093
     depends_on:
+      auth-service:
+        condition: service_healthy
       wallet-service:
         condition: service_healthy
       wallet-user-management:

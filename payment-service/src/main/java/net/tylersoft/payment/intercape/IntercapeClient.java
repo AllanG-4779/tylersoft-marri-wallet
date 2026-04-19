@@ -9,6 +9,7 @@ import net.tylersoft.payment.intercape.dto.*;
 import net.tylersoft.payment.service.OutgoingRequestLogService;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
@@ -19,13 +20,28 @@ public class IntercapeClient {
     private final IntercapeProperties props;
     private final ReactiveHttpClient httpClient;
     private final OutgoingRequestLogService logService;
+    private final ObjectMapper objectMapper;
 
     public Mono<IntercapeTripLookupResponse> lookupTrips(String depPlace, String arrPlace, String transactionId) {
         var request = new IntercapeTripLookupRequest(
                 "TripLookup", trace(), props.getClientId(), props.getServiceId(),
                 props.getUsername(), props.getPassword(), transactionId, depPlace, arrPlace
         );
-        return send(transactionId, "INTERCAPE_TRIP_LOOKUP", request, IntercapeTripLookupResponse.class);
+        String url = props.getBaseUrl();
+        return logService.save(transactionId, "INTERCAPE_TRIP_LOOKUP", url, request)
+                .flatMap(log -> httpClient.postRaw(url, request)
+                        .map(json -> json.replace("\"Content\":\"\"", "\"Content\":null"))
+                        .flatMap(json -> {
+                            try {
+                                return Mono.just(objectMapper.readValue(json, IntercapeTripLookupResponse.class));
+                            } catch (Exception e) {
+                                return Mono.<IntercapeTripLookupResponse>error(
+                                        new RuntimeException("Failed to parse trip lookup response: " + e.getMessage()));
+                            }
+                        })
+                        .flatMap(resp -> logService.updateSuccess(log.getId(), "200", resp).thenReturn(resp))
+                        .onErrorResume(ex -> logService.updateFailure(log.getId(), ex.getMessage())
+                                .then(Mono.error(ex))));
     }
 
     public Mono<IntercapeBookingResponse> booking(BookingApiRequest req) {
@@ -81,6 +97,11 @@ public class IntercapeClient {
         );
         var request = new IntercapeBookingPaidRequest(header, content);
         return send(req.transactionId(), "INTERCAPE_BOOKING_PAID", request, IntercapeBookingPaidResponse.class);
+    }
+
+    public Mono<IntercapeBusStopResponse> busStops() {
+        var request = new IntercapeBusStopRequest("BusStop", trace());
+        return send("BUS_STOPS", "INTERCAPE_BUS_STOPS", request, IntercapeBusStopResponse.class);
     }
 
     public Mono<IntercapePaymentStatusResponse> paymentStatus(String transactionId, String ticketSerial, String status) {

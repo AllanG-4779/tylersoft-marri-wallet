@@ -4,7 +4,11 @@ server:
 spring:
   application:
     name: wallet-user-management
-
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8093}/.well-known/jwks.json
   flyway:
     url: ${SPRING_FLYWAY_URL}
     user: ${SPRING_FLYWAY_USER}
@@ -31,6 +35,11 @@ file:
 services:
   wallet-service:
     url: ${WALLET_SERVICE_URL}
+
+# Credentials this service uses when calling wallet-service over Basic auth
+wallet-service-client:
+  username: ${WALLET_SVC_CLIENT_USERNAME:wallet-svc}
+  password: ${WALLET_SVC_CLIENT_PASSWORD}
 
 management:
   endpoints:

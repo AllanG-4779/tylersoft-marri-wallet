@@ -3,6 +3,7 @@ package net.tylersoft.payment.intercape;
 import lombok.RequiredArgsConstructor;
 import net.tylersoft.payment.intercape.api.*;
 import net.tylersoft.payment.intercape.dto.*;
+import net.tylersoft.payment.intercape.dto.IntercapeBusStopResponse;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -26,6 +27,10 @@ public class IntercapeService {
 
     public Mono<IntercapeBookingPaidResponse> bookingPaid(BookingPaidApiRequest request) {
         return client.bookingPaid(request);
+    }
+
+    public Mono<IntercapeBusStopResponse> getBusStops() {
+        return client.busStops();
     }
 
     public Mono<IntercapePaymentStatusResponse> updatePaymentStatus(PaymentStatusApiRequest request) {

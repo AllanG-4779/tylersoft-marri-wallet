@@ -1,8 +1,8 @@
 package net.tylersoft.wallet.topup;
 
 import lombok.RequiredArgsConstructor;
-import net.tylersoft.wallet.common.ApiResponse;
-import net.tylersoft.wallet.common.UniversalRequestWrapper;
+import net.tylersoft.common.http.dto.ApiResponse;
+import net.tylersoft.common.http.dto.UniversalRequestWrapper;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;

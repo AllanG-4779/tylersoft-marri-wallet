@@ -2,7 +2,6 @@
 **/.gitignore
 **/.idea
 **/*.iml
-**/target
 **/node_modules
 **/.mvn/wrapper/maven-wrapper.jar
 **/HELP.md

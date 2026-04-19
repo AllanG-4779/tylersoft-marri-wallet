@@ -35,8 +35,15 @@ sms:
   client-id: ${SMS_CLIENT_ID}
   sender: ${SMS_SENDER}
 
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8093}/.well-known/jwks.json
+
 intercape:
-  base-url: ${INTERCAPE_BASE_URL}
+  base-url: ${INTERCAPE_BASE_URL:https://www.paybills.co.bw:8601/ecommerce/intercape}
   username: ${INTERCAPE_USERNAME}
   password: ${INTERCAPE_PASSWORD}
   client-id: ${INTERCAPE_CLIENT_ID}
@@ -51,7 +58,7 @@ billing:
   services:
     - service-code: BPC_TRANSACTION
       service-id: "1005"
-      endpoint: /v2/api/send
+      endpoint: /v2/api/vend
     - service-code: ACCESS_TOKEN
       endpoint: /api/access_token
     - service-code: BPC_PRESENTMENT

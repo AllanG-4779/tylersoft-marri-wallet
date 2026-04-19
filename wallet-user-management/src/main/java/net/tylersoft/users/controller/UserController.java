@@ -3,8 +3,9 @@ package net.tylersoft.users.controller;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
-import net.tylersoft.common.http.dto.LookupRequest;
 import net.tylersoft.common.http.dto.ApiResponse;
+import net.tylersoft.common.http.dto.LookupRequest;
+import net.tylersoft.common.http.dto.UniversalRequestWrapper;
 import net.tylersoft.users.dto.*;
 import net.tylersoft.users.service.CustomerService;
 import org.springframework.http.HttpStatus;
@@ -27,21 +28,13 @@ public class UserController {
     private final CustomerService customerService;
     private final Validator validator;
 
-
     /**
      * Step 1 — Register a new customer.
      *
-     * <p>Accepts {@code multipart/form-data} with three parts:
-     * <ul>
-     *   <li>{@code data} — JSON object (Content-Type: application/json) with customer
-     *       details and ID metadata: firstName, lastName, phoneNumber, email,
-     *       idType (NATIONAL_ID|PASSPORT|DRIVING_LICENSE), idNumber (optional)</li>
-     *   <li>{@code id_front} — front-side image of the identity document</li>
-     *   <li>{@code id_back} — back-side image (optional for passports)</li>
-     * </ul>
-     *
-     * <p>On success the customer is created in {@code INITIATED} status, document
-     * images are stored, and an OTP is dispatched to the supplied phone number.
+     * Accepts {@code multipart/form-data} with three parts:
+     * - {@code data} — JSON with customer details + device context (deviceId, deviceType, channel)
+     * - {@code id_front} — front-side image of the identity document
+     * - {@code id_back} — back-side image (optional for passports)
      */
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
@@ -54,39 +47,29 @@ public class UserController {
                 .map(r -> ApiResponse.ok("Registration successful. OTP sent to " + request.phoneNumber(), r));
     }
 
-
-    /**
-     * Step 2 — Verify the OTP sent to the customer's phone.
-     * On success the customer advances to {@code PHONE_VERIFIED}.
-     */
+    /** Step 2 — Verify the OTP sent to the customer's phone. */
     @PostMapping("/verify-otp")
     public Mono<ApiResponse<CustomerResponse>> verifyOtp(
-            @Validated @RequestBody VerifyOtpRequest request) {
-        return customerService.verifyOtp(request)
+            @Validated @RequestBody UniversalRequestWrapper<VerifyOtpRequest> request) {
+        return customerService.verifyOtp(request.data())
                 .map(r -> ApiResponse.ok("Phone number verified successfully", r));
     }
 
-    /**
-     * Resend an OTP for the given phone number and purpose.
-     * Useful when the original OTP expired or was not received.
-     */
+    /** Resend OTP for the given phone number and purpose. */
     @PostMapping("/resend-otp")
     public Mono<ApiResponse<Void>> resendOtp(
-            @Validated @RequestBody ResendOtpRequest request) {
-        return customerService.resendOtp(request)
+            @Validated @RequestBody UniversalRequestWrapper<ResendOtpRequest> request) {
+        return customerService.resendOtp(request.data())
                 .thenReturn(ApiResponse.<Void>ok("OTP resent successfully", null));
     }
 
-
-    @PostMapping("/{customerId}/set-pin")
+    @PostMapping("/set-pin")
     public Mono<ApiResponse<CustomerResponse>> setPin(
-            @PathVariable UUID customerId,
-            @Validated @RequestBody SetPinRequest request) {
-        return customerService.setPin(customerId, request)
+
+            @Validated @RequestBody UniversalRequestWrapper<SetPinRequest> request) {
+        return customerService.setPin(request)
                 .map(r -> ApiResponse.ok("PIN set successfully", r));
     }
-
-    // ── Profile ───────────────────────────────────────────────────────────────
 
     @GetMapping("/{customerId}")
     public Mono<ApiResponse<CustomerResponse>> getProfile(@PathVariable UUID customerId) {
@@ -94,11 +77,9 @@ public class UserController {
                 .map(ApiResponse::ok);
     }
 
-
-
     @PostMapping("/lookup")
     public Mono<ApiResponse<CustomerResponse>> lookupByPhone(
-          @RequestBody LookupRequest request) {
+            @RequestBody LookupRequest request) {
         return customerService.lookupByPhoneNumber(request.phoneNumber())
                 .map(ApiResponse::ok);
     }
@@ -110,12 +91,6 @@ public class UserController {
                 .map(ApiResponse::ok);
     }
 
-
-    /**
-     * Programmatically validates any bean against its constraint annotations.
-     * Used for multipart endpoints where {@code @Validated @RequestBody} is not applicable.
-     * Emits an {@link IllegalArgumentException} with all violations joined if any fail.
-     */
     private <T> Mono<Void> validate(T target) {
         Set<ConstraintViolation<T>> violations = validator.validate(target);
         if (violations.isEmpty()) return Mono.empty();

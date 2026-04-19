@@ -2,6 +2,7 @@ package net.tylersoft.users.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.tylersoft.common.http.dto.UniversalRequestWrapper;
 import net.tylersoft.users.common.CustomerStatus;
 import net.tylersoft.users.common.OtpPurpose;
 import net.tylersoft.users.dto.*;
@@ -34,6 +35,7 @@ public class CustomerService {
     private final OtpService otpService;
     private final FileStorageService fileStorageService;
     private final WalletServiceClient walletServiceClient;
+    private final DeviceService deviceService;
     private final TransactionalOperator transactionalOperator;
 
     // ── Registration ──────────────────────────────────────────────────────────
@@ -171,9 +173,11 @@ public class CustomerService {
 
     // ── Set PIN ───────────────────────────────────────────────────────────────
 
-    public Mono<CustomerResponse> setPin(UUID customerId, SetPinRequest request) {
-        return customerRepository.findById(customerId)
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("Customer not found: " + customerId)))
+    public Mono<CustomerResponse> setPin(UniversalRequestWrapper<SetPinRequest> requestWrapper) {
+        var request = requestWrapper.data();
+        var channelInfo = requestWrapper.channelDetails();
+        return customerRepository.findById(request.customerId())
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Customer not found: " + request.customerId())))
                 .filter(customer -> !CustomerStatus.INITIATED.name().equals(customer.getStatus()))
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("Phone number must be verified before setting a PIN")))
                 .flatMap(customer -> {
@@ -191,6 +195,9 @@ public class CustomerService {
                     return customerRepository.save(customer)
                             .flatMap(saved -> shouldActivate ? createWalletFor(saved) : Mono.just(saved));
                 })
+                .flatMap(customer -> deviceService
+                        .registerDevice(customer.getId(), channelInfo)
+                        .thenReturn(customer))
                 .map(CustomerResponse::from);
     }
 
@@ -211,15 +218,12 @@ public class CustomerService {
                 });
     }
 
-    // ── Profile / Lookup ─────────────────────────────────────────────────────
-
     public Mono<CustomerResponse> getProfile(UUID customerId) {
         return customerRepository.findById(customerId)
                 .switchIfEmpty(Mono.error(new IllegalArgumentException(
                         "Customer not found: " + customerId)))
                 .map(CustomerResponse::from);
     }
-
 
 
     public Mono<CustomerResponse> lookupByPhoneNumber(String phoneNumber) {
@@ -249,7 +253,7 @@ public class CustomerService {
                     log.warn("Wallet retry failed for customerId={}: {}", customer.getId(), err.getMessage());
                     customer.setStatusReason("Wallet retry failed: " + err.getMessage().substring(0, Math.min(err.getMessage().length(), 100)));
                     customer.setUpdatedAt(OffsetDateTime.now());
-                   return customerRepository.save(customer);
+                    return customerRepository.save(customer);
                 });
     }
 
