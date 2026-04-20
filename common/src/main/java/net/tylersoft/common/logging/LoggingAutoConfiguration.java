@@ -16,12 +16,7 @@ import java.util.Set;
 public class LoggingAutoConfiguration {
 
 
-    @Bean
-    public ObjectMapper objectMapper(SensitiveJacksonModule sensitiveJacksonModule) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(sensitiveJacksonModule);
-        return mapper;
-    }
+
 
     /**
      * Field names that are always masked regardless of whether {@link Sensitive}
