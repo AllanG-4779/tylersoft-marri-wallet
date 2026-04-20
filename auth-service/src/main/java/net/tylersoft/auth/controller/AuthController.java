@@ -2,6 +2,7 @@ package net.tylersoft.auth.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import net.tylersoft.auth.dto.IntegratorLoginRequest;
 import net.tylersoft.auth.dto.LoginRequest;
 import net.tylersoft.auth.dto.LoginResponse;
 import net.tylersoft.auth.service.AuthService;
@@ -25,6 +26,13 @@ public class AuthController {
     public Mono<ApiResponse<LoginResponse>> login(
             @Validated @RequestBody UniversalRequestWrapper<LoginRequest> request) {
         return authService.login(request.data(), request.channelDetails().deviceId())
+                .map(ApiResponse::ok);
+    }
+
+    @PostMapping("/integrator/login")
+    public Mono<ApiResponse<LoginResponse>> integratorLogin(
+            @Validated @RequestBody UniversalRequestWrapper<IntegratorLoginRequest> request) {
+        return authService.integratorLogin(request.data())
                 .map(ApiResponse::ok);
     }
 }

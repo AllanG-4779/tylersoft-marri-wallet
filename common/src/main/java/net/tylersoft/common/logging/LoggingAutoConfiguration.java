@@ -15,6 +15,14 @@ import java.util.Set;
 @EnableConfigurationProperties(SensitiveMaskingProperties.class)
 public class LoggingAutoConfiguration {
 
+
+    @Bean
+    public ObjectMapper objectMapper(SensitiveJacksonModule sensitiveJacksonModule) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(sensitiveJacksonModule);
+        return mapper;
+    }
+
     /**
      * Field names that are always masked regardless of whether {@link Sensitive}
      * is present. Comparison is case-insensitive.

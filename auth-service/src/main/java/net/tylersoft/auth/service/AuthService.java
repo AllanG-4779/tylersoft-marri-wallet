@@ -1,9 +1,11 @@
 package net.tylersoft.auth.service;
 
 import lombok.RequiredArgsConstructor;
+import net.tylersoft.auth.dto.IntegratorLoginRequest;
 import net.tylersoft.auth.dto.LoginRequest;
 import net.tylersoft.auth.dto.LoginResponse;
 import net.tylersoft.auth.repository.AuthCustomerRepository;
+import net.tylersoft.auth.repository.AuthIntegratorRepository;
 import net.tylersoft.auth.repository.CustomerDeviceRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,8 +21,24 @@ public class AuthService {
 
     private final AuthCustomerRepository customerRepository;
     private final CustomerDeviceRepository deviceRepository;
+    private final AuthIntegratorRepository integratorRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenService jwtTokenService;
+
+    public Mono<LoginResponse> integratorLogin(IntegratorLoginRequest request) {
+        return integratorRepository.findByAccessKey(request.accessKey())
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials")))
+                .flatMap(integrator -> {
+                    if (!passwordEncoder.matches(request.accessSecret(), integrator.getSecretHash())) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
+                    }
+                    if (!"ACTIVE".equalsIgnoreCase(integrator.getStatus())) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.FORBIDDEN, "Integrator is not active"));
+                    }
+                    String token = jwtTokenService.issueIntegratorToken(integrator);
+                    return Mono.just(LoginResponse.bearer(token, jwtTokenService.expiresInSeconds()));
+                });
+    }
 
     public Mono<LoginResponse> login(LoginRequest request, String deviceId) {
         return customerRepository.findByPhoneNumber(request.phoneNumber())

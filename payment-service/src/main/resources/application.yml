@@ -40,6 +40,12 @@ sms:
   sender: ${SMS_SENDER}
 
 
+tcp:
+  base-url: ${TCP_BASE_URL}
+  org: ${TCP_ORG}
+  key: ${TCP_KEY}
+  service-id: ${TCP_SERVICE_ID:1010}
+
 intercape:
   base-url: ${INTERCAPE_BASE_URL:https://www.paybills.co.bw:8601/ecommerce/intercape}
   username: ${INTERCAPE_USERNAME}

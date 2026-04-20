@@ -9,7 +9,6 @@ public class SensitiveJacksonModule extends SimpleModule {
     private final Set<String> alwaysSensitiveNames;
 
     public SensitiveJacksonModule(Set<String> alwaysSensitiveNames) {
-        super("SensitiveJacksonModule");
         this.alwaysSensitiveNames = alwaysSensitiveNames;
     }
 

@@ -34,11 +34,7 @@ public class WebClientConfig {
                 .build();
     }
 
-    @Bean
-    @Primary
-    public com.fasterxml.jackson.databind.ObjectMapper jacksonObjectMapper() {
-        return new com.fasterxml.jackson.databind.ObjectMapper();
-    }
+
 
     /**
      * Jackson 2.x mapper — required by the logging infrastructure (SensitiveJacksonModule etc.)

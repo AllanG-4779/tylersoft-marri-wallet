@@ -25,7 +25,7 @@ public class SecurityConfig {
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-                .httpBasic(Customizer.withDefaults())
+//                .httpBasic(Customizer.withDefaults())
                 .build();
     }
 
@@ -37,7 +37,7 @@ public class SecurityConfig {
     @Bean
     public MapReactiveUserDetailsService serviceUserDetailsService(
             @Value("${service.username}") String username,
-            @Value("${service.password}") String password,
+            @Value("${service.password:enabled}") String password,
             PasswordEncoder encoder) {
         var serviceUser = User.withUsername(username)
                 .password(encoder.encode(password))

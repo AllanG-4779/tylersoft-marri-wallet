@@ -38,7 +38,7 @@ management:
 
 service:
   username: ${SERVICE_USERNAME:wallet-svc}
-  password: ${SERVICE_PASSWORD}
+  password: ${SERVICE_PASSWORD:names}
 
 logging:
   level:
