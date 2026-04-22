@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: wallet-user-management
+    name: wallet-user-service
   security:
     oauth2:
       resourceserver:
