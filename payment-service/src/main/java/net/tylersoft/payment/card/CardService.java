@@ -17,7 +17,7 @@ import java.util.Base64;
 @Service
 @RequiredArgsConstructor
 public class CardService {
-
+ // yyyy-MM-dd HH:mm:ss
     private static final DateTimeFormatter TIMESTAMP_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final TcpClient tcpClient;
@@ -59,19 +59,22 @@ public class CardService {
     }
 
     private String buildAuthKey(String tranid, String amount, String timestamp, String phone) {
+        String hex;
         try {
             String raw = props.getKey() + tranid + amount + timestamp + phone;
             String base64 = Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
             MessageDigest digest = MessageDigest.getInstance("SHA-512");
             byte[] hash = digest.digest(base64.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hex = new StringBuilder();
-            for (byte b : hash) {
-                hex.append(String.format("%02X", b));
+
+            StringBuilder sb = new StringBuilder();
+            for (byte aByte : hash) {
+                sb.append(Integer.toString((aByte & 0xff) + 0x100, 16).substring(1));
             }
-            return hex.toString();
+            hex = sb.toString();
         } catch (Exception e) {
             throw new IllegalStateException("Failed to generate authkey", e);
         }
+        return hex;
     }
 
 }

@@ -53,7 +53,7 @@ public class ReactiveHttpClient {
         } else {
             responseSpec = requestSpec.retrieve();
         }
-        log.info("Sending {} request to {} with headers: {} and body: {}", method, url, headers, requestBody);
+        log.info("Sending {} request to {} with headers: {} and body: {}", method, url, headers, objectMapper.writeValueAsString(requestBody));
 
         return responseSpec
                 .onStatus(
@@ -99,7 +99,7 @@ public class ReactiveHttpClient {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(body)
                 .retrieve();
-        log.info("Sending POST request to {} with body: {}", url, body);
+        log.info("Sending POST request to {} with body: {}", url, objectMapper.writeValueAsString(body));
         return responseSpec
                 .onStatus(HttpStatusCode::is4xxClientError,
                         response -> response.bodyToMono(String.class)

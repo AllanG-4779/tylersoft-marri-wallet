@@ -38,13 +38,13 @@ public class AccountOpeningService {
     /**
      * Open a new wallet account.
      *
-     * @param activeUser     authenticated user performing the action (created_by)
+//     * @param activeUser     authenticated user performing the action (created_by)
      * @param currency       ISO currency code, e.g. "KES"
      * @param accountPrefix  account-type prefix, e.g. "TA"
      * @param phoneNumber    owner's phone number
      * @param accountName    display name for the account
      * @param reqType        must be {@code "create"} (mirrors the IN param of the SP)
-     * @param openingBalance initial balance credited to the account
+//     * @param openingBalance initial balance credited to the account
      * @return {@link OpenAccountResult} carrying status_code, message, and accountNo
      */
     @Transactional

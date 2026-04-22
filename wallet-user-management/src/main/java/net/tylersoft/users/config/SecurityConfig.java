@@ -21,6 +21,8 @@ public class SecurityConfig {
                                 "/api/v2/users/register",
                                 "/api/v2/users/verify-otp",
                                 "/api/v2/users/resend-otp",
+                                "/api/v2/users/lookup",
+                                "/api/v2/users/set-pin",
                                 "/actuator/health",
                                 "/actuator/info"
                         ).permitAll()

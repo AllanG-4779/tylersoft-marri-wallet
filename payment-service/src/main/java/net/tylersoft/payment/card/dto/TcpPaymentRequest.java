@@ -6,7 +6,7 @@ public record TcpPaymentRequest(
         String tranid,
         String country,
         String amount,
-        String cbyreferenceId,
+        String cybreferenceId,
         String authkey,
         String firstname,
         @JsonProperty("card_number") String cardNumber,
