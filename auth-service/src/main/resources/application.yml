@@ -19,9 +19,8 @@ spring:
     password: ${SPRING_R2DBC_PASSWORD}
   cloud:
     consul:
-      discovery:
-        hostname: ${CONSUL_HOST:localhost}
-        port: 8500
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
 # RSA key paths — omit for ephemeral dev keys (NOT for production).
 # In production set these to point to your PEM files:
 #   JWT_PRIVATE_KEY_PATH=file:/secrets/private.pem

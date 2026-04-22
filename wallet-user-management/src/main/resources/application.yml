@@ -27,9 +27,8 @@ spring:
       initial-size: 2
   cloud:
     consul:
-      discovery:
-        hostname: ${CONSUL_HOST:localhost}
-        port: 8500
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
 
   codec:
     max-in-memory-size: 10MB
