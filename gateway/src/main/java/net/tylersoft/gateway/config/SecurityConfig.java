@@ -2,6 +2,7 @@ package net.tylersoft.gateway.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -16,6 +17,10 @@ public class SecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(auth -> auth
+                        // Allow all CORS preflight requests
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Static API client tool
+                        .pathMatchers("/api-client.html", "/").permitAll()
                         // Auth-service login + JWK set are public
                         .pathMatchers(
                                 "/api/v1/auth/**",

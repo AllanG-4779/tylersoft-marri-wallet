@@ -5,11 +5,25 @@ spring:
   application:
     name: gateway
 
+  web:
+    resources:
+      static-locations: classpath:/static/
+
   security:
     oauth2:
       resourceserver:
         jwt:
           jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8093}/.well-known/jwks.json
+
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: false
 
 services:
   auth-url: ${AUTH_SERVICE_URL:http://localhost:8093}

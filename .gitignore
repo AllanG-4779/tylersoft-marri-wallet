@@ -6,6 +6,7 @@ target/
 
 ### STS ###
 .apt_generated
+
 .classpath
 .factorypath
 .project
@@ -31,6 +32,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Environment files ###
+.env
+.env.*
+**/.env
+**/.env.*
 
 ### Local credential profiles ###
 **/src/main/resources/application-test.yml
