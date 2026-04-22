@@ -1,0 +1,2966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marri API Client</title>
+<style>
+  :root {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #21262d;
+    --bg-hover: #2d333b;
+    --bg-active: #388bfd1a;
+    --border: #30363d;
+    --border-light: #21262d;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #6e7681;
+    --accent: #58a6ff;
+    --accent-hover: #79bbff;
+    --accent-dim: #388bfd26;
+    --success: #3fb950;
+    --success-bg: #3fb95014;
+    --warning: #d29922;
+    --warning-bg: #d2992214;
+    --error: #f85149;
+    --error-bg: #f8514914;
+    --method-get: #39d353;
+    --method-post: #58a6ff;
+    --method-put: #d29922;
+    --method-delete: #f85149;
+    --method-patch: #bc8cff;
+    --method-head: #58a6ff;
+    --method-options: #39d353;
+    --method-custom: #ff7b72;
+    --radius: 6px;
+    --radius-sm: 4px;
+    --radius-lg: 8px;
+    --shadow: 0 8px 24px rgba(1,4,9,0.5);
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-ui);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-size: 13px;
+  }
+
+  /* ─── Titlebar ─────────────────────────────────────── */
+  .titlebar {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+    flex-shrink: 0;
+  }
+
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 900;
+    color: #fff;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 2px;
+  }
+
+  .titlebar-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+  }
+
+  .env-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    font-size: 12px;
+    color: var(--text-secondary);
+    position: relative;
+  }
+
+  .env-selector:hover { border-color: var(--accent); color: var(--text-primary); }
+
+  .env-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    flex-shrink: 0;
+  }
+
+  .env-selector select {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: inherit;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    cursor: pointer;
+    padding-right: 4px;
+  }
+
+  .env-selector select option { background: var(--bg-tertiary); }
+
+  .titlebar-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .btn-icon:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+  /* ─── Layout ───────────────────────────────────────── */
+  .app-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  /* ─── Sidebar ──────────────────────────────────────── */
+  .sidebar {
+    width: 260px;
+    min-width: 200px;
+    max-width: 380px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .sidebar-resizer {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    cursor: col-resize;
+    z-index: 10;
+  }
+  .sidebar-resizer:hover { background: var(--accent); opacity: 0.4; }
+
+  .sidebar-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .sidebar-tab {
+    flex: 1;
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+
+  .sidebar-tab:hover { color: var(--text-secondary); }
+  .sidebar-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .sidebar-content { flex: 1; overflow-y: auto; overflow-x: hidden; }
+
+  .sidebar-search {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .sidebar-search input {
+    width: 100%;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px 6px 28px;
+    color: var(--text-primary);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .sidebar-search { position: relative; }
+  .sidebar-search .search-icon {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 12px;
+    pointer-events: none;
+  }
+  .sidebar-search input:focus { border-color: var(--accent); }
+
+  .collection-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: var(--radius-sm);
+    margin: 2px 6px;
+    user-select: none;
+  }
+  .collection-header:hover { background: var(--bg-hover); }
+
+  .collection-icon { color: var(--warning); font-size: 12px; flex-shrink: 0; }
+  .collection-name { flex: 1; font-size: 12px; font-weight: 500; }
+  .collection-count {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    padding: 1px 6px;
+    border-radius: 10px;
+  }
+  .collection-arrow { color: var(--text-muted); font-size: 10px; transition: transform 0.2s; }
+  .collection-header.open .collection-arrow { transform: rotate(90deg); }
+
+  .collection-requests { padding-left: 14px; }
+
+  .request-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    margin: 1px 6px;
+    transition: background 0.15s;
+    group: true;
+  }
+  .request-item:hover { background: var(--bg-hover); }
+  .request-item.active { background: var(--bg-active); }
+
+  .method-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 3px;
+    min-width: 38px;
+    text-align: center;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+  }
+
+  .method-GET    { color: var(--method-get);     background: #3fb95014; }
+  .method-POST   { color: var(--method-post);    background: #388bfd14; }
+  .method-PUT    { color: var(--method-put);     background: #d2992214; }
+  .method-DELETE { color: var(--method-delete);  background: #f8514914; }
+  .method-PATCH  { color: var(--method-patch);   background: #bc8cff14; }
+  .method-HEAD   { color: var(--method-head);    background: #388bfd14; }
+  .method-OPTIONS{ color: var(--method-options); background: #3fb95014; }
+  .method-CUSTOM { color: var(--method-custom);  background: #ff7b7214; }
+
+  .request-name { flex: 1; font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .request-item:hover .request-name { color: var(--text-primary); }
+
+  .new-collection-btn, .new-request-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    margin: 4px 6px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    border: 1px dashed var(--border);
+  }
+  .new-collection-btn:hover, .new-request-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  /* History items */
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    margin: 1px 6px;
+    transition: background 0.15s;
+  }
+  .history-item:hover { background: var(--bg-hover); }
+
+  .history-url {
+    flex: 1;
+    font-size: 11px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+  }
+  .history-time { font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+
+  /* ─── Main Panel ───────────────────────────────────── */
+  .main-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  /* ─── Request Bar ──────────────────────────────────── */
+  .request-bar {
+    padding: 12px 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .method-selector {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .method-select-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+  .method-select-btn:hover { border-color: var(--accent); }
+  .method-select-btn .arrow { color: var(--text-muted); font-size: 10px; margin-left: auto; }
+
+  .method-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    z-index: 1000;
+    min-width: 160px;
+    padding: 4px;
+    display: none;
+  }
+  .method-dropdown.open { display: block; }
+
+  .method-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.1s;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+  .method-option:hover { background: var(--bg-hover); }
+
+  .method-custom-input {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  .method-custom-input.show { display: flex; }
+  .method-custom-input input {
+    flex: 1;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 5px 8px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    outline: none;
+    text-transform: uppercase;
+  }
+  .method-custom-input input:focus { border-color: var(--method-custom); }
+  .method-custom-input button {
+    padding: 5px 10px;
+    background: var(--method-custom);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .url-input-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .url-input {
+    width: 100%;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 36px 8px 12px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .url-input:focus { border-color: var(--accent); }
+  .url-input::placeholder { color: var(--text-muted); font-family: var(--font-ui); }
+
+  .url-clear-btn {
+    position: absolute;
+    right: 8px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    display: none;
+    transition: color 0.15s;
+  }
+  .url-clear-btn:hover { color: var(--text-primary); }
+
+  .send-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 20px;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .send-btn:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px #58a6ff33; }
+  .send-btn:active { transform: translateY(0); }
+  .send-btn.loading { background: var(--bg-tertiary); color: var(--text-muted); cursor: not-allowed; }
+
+  .save-btn {
+    padding: 8px 14px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .save-btn:hover { border-color: var(--warning); color: var(--warning); }
+
+  /* ─── Request Tabs & Content ───────────────────────── */
+  .request-config {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .tabs-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    flex-shrink: 0;
+    gap: 2px;
+  }
+
+  .tab {
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--text-secondary); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-count {
+    font-size: 10px;
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    padding: 1px 5px;
+    border-radius: 8px;
+  }
+  .tab.active .tab-count { background: var(--accent-dim); color: var(--accent); }
+
+  .tab-panel { display: none; flex: 1; overflow: hidden; }
+  .tab-panel.active { display: flex; flex-direction: column; }
+
+  /* ─── KV Editor ────────────────────────────────────── */
+  .kv-editor {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+  }
+
+  .kv-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 4px;
+    animation: slideIn 0.15s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .kv-row input {
+    flex: 1;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    min-width: 0;
+  }
+  .kv-row input::placeholder { color: var(--text-muted); font-family: var(--font-ui); font-size: 11px; }
+  .kv-row input:focus { border-color: var(--accent); }
+  .kv-row input.key-input { font-weight: 500; }
+
+  .kv-checkbox {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+    accent-color: var(--accent);
+  }
+
+  .kv-delete-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    font-size: 14px;
+  }
+  .kv-delete-btn:hover { background: var(--error-bg); color: var(--error); }
+
+  .add-row-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    margin: 4px 0;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+  }
+  .add-row-btn:hover { color: var(--accent); background: var(--accent-dim); }
+
+  /* ─── Body Tab ─────────────────────────────────────── */
+  .body-tab-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .body-type-selector {
+    display: flex;
+    gap: 16px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-light);
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .body-type-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .radio-group { display: flex; gap: 12px; }
+
+  .radio-option {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-secondary);
+    transition: color 0.15s;
+  }
+  .radio-option:hover { color: var(--text-primary); }
+  .radio-option input[type="radio"] { accent-color: var(--accent); }
+  .radio-option.active { color: var(--accent); }
+
+  .code-editor-wrapper {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .lang-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--border-light);
+    flex-shrink: 0;
+  }
+
+  .lang-selector select {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 3px 8px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    outline: none;
+    cursor: pointer;
+  }
+  .lang-selector select option { background: var(--bg-secondary); }
+
+  .beautify-btn {
+    padding: 3px 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .beautify-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .code-editor {
+    flex: 1;
+    resize: none;
+    background: var(--bg-tertiary);
+    border: none;
+    padding: 12px 16px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.6;
+    outline: none;
+    overflow: auto;
+    tab-size: 2;
+    min-height: 120px;
+  }
+  .code-editor::placeholder { color: var(--text-muted); }
+
+  /* ─── Auth Tab ─────────────────────────────────────── */
+  .auth-panel {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+  }
+
+  .auth-type-select {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 10px;
+    color: var(--text-primary);
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    width: 200px;
+  }
+  .auth-type-select option { background: var(--bg-secondary); }
+
+  .auth-fields { display: flex; flex-direction: column; gap: 8px; }
+
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  .field-label { font-size: 11px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
+
+  .field-input {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 10px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+  .field-input:focus { border-color: var(--accent); }
+
+  /* ─── Splitter ─────────────────────────────────────── */
+  .splitter {
+    height: 4px;
+    background: var(--border);
+    cursor: row-resize;
+    flex-shrink: 0;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .splitter:hover, .splitter.dragging { background: var(--accent); }
+  .splitter::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 2px;
+    background: currentColor;
+    border-radius: 1px;
+    opacity: 0.3;
+  }
+
+  /* ─── Response Panel ───────────────────────────────── */
+  .response-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 120px;
+    overflow: hidden;
+    background: var(--bg-primary);
+  }
+
+  .response-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .response-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+
+  .status-2xx { background: var(--success-bg); color: var(--success); }
+  .status-3xx { background: var(--warning-bg); color: var(--warning); }
+  .status-4xx { background: var(--error-bg); color: var(--error); }
+  .status-5xx { background: var(--error-bg); color: var(--error); }
+
+  .response-meta {
+    margin-left: auto;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+  }
+
+  .meta-label { color: var(--text-muted); }
+  .meta-value { color: var(--text-secondary); font-family: var(--font-mono); font-weight: 500; }
+  .meta-value.fast { color: var(--success); }
+  .meta-value.slow { color: var(--warning); }
+  .meta-value.very-slow { color: var(--error); }
+
+  .response-tabs-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    flex-shrink: 0;
+    gap: 2px;
+  }
+
+  .response-body {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+  }
+
+  .response-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    gap: 12px;
+    padding: 24px;
+  }
+
+  .placeholder-icon { font-size: 36px; opacity: 0.3; }
+  .placeholder-text { font-size: 13px; }
+  .placeholder-hint { font-size: 11px; opacity: 0.7; }
+
+  .json-viewer {
+    padding: 12px 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .json-key   { color: #79c0ff; }
+  .json-str   { color: #a5d6ff; }
+  .json-num   { color: #79c0ff; }
+  .json-bool  { color: #ff7b72; }
+  .json-null  { color: #ff7b72; }
+  .json-punct { color: var(--text-muted); }
+
+  .raw-viewer {
+    padding: 12px 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: var(--text-secondary);
+  }
+
+  .headers-viewer {
+    padding: 12px 16px;
+  }
+
+  .header-row {
+    display: flex;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 12px;
+  }
+  .header-row:last-child { border-bottom: none; }
+  .header-key { color: #79c0ff; font-family: var(--font-mono); min-width: 180px; font-weight: 500; }
+  .header-val { color: var(--text-secondary); font-family: var(--font-mono); word-break: break-all; }
+
+  /* ─── Loading ──────────────────────────────────────── */
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), #bc8cff);
+    z-index: 9999;
+    transition: width 0.3s ease;
+    display: none;
+  }
+  .loading-bar.active { display: block; animation: loadingPulse 1s ease infinite; }
+  @keyframes loadingPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+  /* ─── Toast ────────────────────────────────────────── */
+  .toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 10000;
+  }
+
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    font-size: 12px;
+    color: var(--text-primary);
+    animation: toastIn 0.3s ease;
+    max-width: 320px;
+  }
+
+  .toast.success { border-left: 3px solid var(--success); }
+  .toast.error   { border-left: 3px solid var(--error);   }
+  .toast.info    { border-left: 3px solid var(--accent);  }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0);    }
+  }
+
+  /* ─── Modal ────────────────────────────────────────── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(1,4,9,0.7);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.15s ease;
+    backdrop-filter: blur(4px);
+  }
+
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  .modal {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    width: 460px;
+    max-width: 90vw;
+    animation: modalIn 0.2s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity:0; transform: scale(0.95) translateY(-8px); }
+    to   { opacity:1; transform: scale(1)    translateY(0);     }
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .modal-title { font-size: 15px; font-weight: 600; }
+
+  .modal-close {
+    width: 28px; height: 28px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+  .modal-body { display: flex; flex-direction: column; gap: 12px; }
+
+  .modal-input {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    color: var(--text-primary);
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+  .modal-input:focus { border-color: var(--accent); }
+
+  .modal-footer {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+
+  .btn-primary {
+    padding: 8px 18px;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+
+  .btn-secondary {
+    padding: 8px 18px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-secondary:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+
+  /* ─── Environment Editor ───────────────────────────── */
+  .env-panel { padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+  .env-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+
+  /* ─── Scrollbar ────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* ─── Misc ─────────────────────────────────────────── */
+  .hidden { display: none !important; }
+
+  .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    opacity: 0;
+  }
+  .response-body:hover .copy-btn { opacity: 1; }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .response-size-warning {
+    padding: 8px 16px;
+    background: var(--warning-bg);
+    border-bottom: 1px solid var(--warning);
+    font-size: 11px;
+    color: var(--warning);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .kbd {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 5px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .url-variables { font-size: 11px; color: var(--text-muted); padding: 4px 16px; }
+  .url-var-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 6px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-radius: 3px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    margin: 1px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-bar" id="loadingBar"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Titlebar -->
+<div class="titlebar">
+  <div class="logo">
+    <div class="logo-icon">M</div>
+    Marri API <span class="logo-sub">Client</span>
+  </div>
+
+  <div class="titlebar-divider"></div>
+
+  <div class="env-selector" id="envSelectorBtn" title="Manage Environments">
+    <div class="env-dot" id="envDot"></div>
+    <select id="envSelect" onchange="switchEnvironment(this.value)">
+      <option value="">No Environment</option>
+    </select>
+  </div>
+
+  <div class="titlebar-actions">
+    <button class="btn-icon" title="New Collection (Ctrl+Shift+N)" onclick="openNewCollectionModal()">&#43;</button>
+    <button class="btn-icon" title="Import / Export" onclick="openImportExport()">&#8661;</button>
+    <button class="btn-icon" title="Manage Environments" onclick="openEnvModal()">&#9881;</button>
+    <button class="btn-icon" title="Reset to defaults (reload all API collections)" onclick="resetToDefaults()" style="color:var(--text-muted);font-size:12px">&#8635;</button>
+  </div>
+</div>
+
+<!-- Body -->
+<div class="app-body">
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-tabs">
+      <div class="sidebar-tab active" data-sidebar-tab="collections" onclick="switchSidebarTab('collections')">Collections</div>
+      <div class="sidebar-tab" data-sidebar-tab="history" onclick="switchSidebarTab('history')">History</div>
+    </div>
+
+    <div class="sidebar-content" id="sidebarCollections">
+      <div class="sidebar-search">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" placeholder="Search requests..." id="searchInput" oninput="filterRequests(this.value)">
+      </div>
+      <div id="collectionsTree"></div>
+      <div class="new-collection-btn" onclick="openNewCollectionModal()">
+        <span>&#43;</span> New Collection
+      </div>
+    </div>
+
+    <div class="sidebar-content hidden" id="sidebarHistory">
+      <div id="historyList"></div>
+    </div>
+
+    <div class="sidebar-resizer" id="sidebarResizer"></div>
+  </div>
+
+  <!-- Main -->
+  <div class="main-panel">
+
+    <!-- Request Bar -->
+    <div class="request-bar">
+      <div class="method-selector" id="methodSelector">
+        <div class="method-select-btn" id="methodBtn" onclick="toggleMethodDropdown()">
+          <span class="method-badge method-GET" id="methodBadge">GET</span>
+          <span class="arrow">&#9660;</span>
+        </div>
+        <div class="method-dropdown" id="methodDropdown">
+          <div class="method-option" onclick="selectMethod('GET')">    <span class="method-badge method-GET">GET</span>     <span style="color:var(--text-secondary);font-size:11px;">Retrieve data</span></div>
+          <div class="method-option" onclick="selectMethod('POST')">   <span class="method-badge method-POST">POST</span>   <span style="color:var(--text-secondary);font-size:11px;">Submit data</span></div>
+          <div class="method-option" onclick="selectMethod('PUT')">    <span class="method-badge method-PUT">PUT</span>     <span style="color:var(--text-secondary);font-size:11px;">Replace resource</span></div>
+          <div class="method-option" onclick="selectMethod('PATCH')">  <span class="method-badge method-PATCH">PATCH</span> <span style="color:var(--text-secondary);font-size:11px;">Partial update</span></div>
+          <div class="method-option" onclick="selectMethod('DELETE')"> <span class="method-badge method-DELETE">DEL</span>   <span style="color:var(--text-secondary);font-size:11px;">Delete resource</span></div>
+          <div class="method-option" onclick="selectMethod('HEAD')">   <span class="method-badge method-HEAD">HEAD</span>   <span style="color:var(--text-secondary);font-size:11px;">Headers only</span></div>
+          <div class="method-option" onclick="selectMethod('OPTIONS')"><span class="method-badge method-OPTIONS">OPT</span>  <span style="color:var(--text-secondary);font-size:11px;">Check options</span></div>
+          <div class="method-option" onclick="showCustomMethod()">     <span class="method-badge method-CUSTOM" style="min-width:38px">...</span> <span style="color:var(--text-secondary);font-size:11px;">Custom method</span></div>
+          <div class="method-custom-input" id="customMethodInput">
+            <input type="text" id="customMethodText" placeholder="METHOD" maxlength="12" oninput="this.value=this.value.toUpperCase()">
+            <button onclick="applyCustomMethod()">Use</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="url-input-wrapper">
+        <input type="text" class="url-input" id="urlInput"
+               placeholder="https://api.example.com/endpoint  or  {{base_url}}/path"
+               oninput="onUrlInput(this.value)"
+               onkeydown="if(event.key==='Enter')sendRequest()">
+        <span class="url-clear-btn" id="urlClearBtn" onclick="clearUrl()">&#215;</span>
+      </div>
+
+      <button class="save-btn" onclick="saveCurrentRequest()" title="Save request (Ctrl+S)">&#9733; Save</button>
+      <button class="send-btn" id="sendBtn" onclick="sendRequest()">
+        <span id="sendBtnIcon">&#9658;</span>
+        <span id="sendBtnText">Send</span>
+      </button>
+    </div>
+
+    <!-- Request Tabs -->
+    <div class="request-config">
+      <div class="tabs-bar">
+        <div class="tab active" data-tab="params" onclick="switchTab('params')">Params <span class="tab-count" id="paramsCount">0</span></div>
+        <div class="tab" data-tab="headers" onclick="switchTab('headers')">Headers <span class="tab-count" id="headersCount">0</span></div>
+        <div class="tab" data-tab="body" onclick="switchTab('body')">Body <span class="tab-count" id="bodyCount">0</span></div>
+        <div class="tab" data-tab="auth" onclick="switchTab('auth')">Auth</div>
+        <div class="tab" data-tab="scripts" onclick="switchTab('scripts')">Scripts</div>
+      </div>
+
+      <!-- Params -->
+      <div class="tab-panel active" id="panel-params">
+        <div class="kv-editor" id="paramsEditor"></div>
+        <button class="add-row-btn" onclick="addKvRow('params')">&#43; Add Parameter</button>
+      </div>
+
+      <!-- Headers -->
+      <div class="tab-panel" id="panel-headers">
+        <div class="kv-editor" id="headersEditor"></div>
+        <button class="add-row-btn" onclick="addKvRow('headers')">&#43; Add Header</button>
+      </div>
+
+      <!-- Body -->
+      <div class="tab-panel" id="panel-body">
+        <div class="body-tab-panel">
+          <div class="body-type-selector">
+            <span class="body-type-label">Body</span>
+            <div class="radio-group">
+              <label class="radio-option active"><input type="radio" name="bodyType" value="none" checked onchange="switchBodyType('none')"> none</label>
+              <label class="radio-option"><input type="radio" name="bodyType" value="json" onchange="switchBodyType('json')"> JSON</label>
+              <label class="radio-option"><input type="radio" name="bodyType" value="raw" onchange="switchBodyType('raw')"> raw</label>
+              <label class="radio-option"><input type="radio" name="bodyType" value="form" onchange="switchBodyType('form')"> form-data</label>
+              <label class="radio-option"><input type="radio" name="bodyType" value="urlencoded" onchange="switchBodyType('urlencoded')"> x-www-form-urlencoded</label>
+            </div>
+          </div>
+          <div class="code-editor-wrapper" id="bodyCodeWrapper">
+            <div class="lang-selector">
+              <span style="font-size:11px;color:var(--text-muted)">Content-Type:</span>
+              <select id="contentTypeSelect" onchange="updateContentType(this.value)">
+                <option value="application/json">application/json</option>
+                <option value="application/xml">application/xml</option>
+                <option value="text/plain">text/plain</option>
+                <option value="text/html">text/html</option>
+                <option value="application/javascript">application/javascript</option>
+              </select>
+              <button class="beautify-btn" onclick="beautifyBody()">&#10004; Beautify</button>
+            </div>
+            <textarea class="code-editor" id="bodyEditor" placeholder='{"key": "value"}'></textarea>
+          </div>
+          <div id="bodyFormWrapper" class="hidden">
+            <div class="kv-editor" id="formEditor"></div>
+            <button class="add-row-btn" onclick="addKvRow('form')">&#43; Add Field</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auth -->
+      <div class="tab-panel" id="panel-auth">
+        <div class="auth-panel">
+          <div class="field-group">
+            <label class="field-label">Auth Type</label>
+            <select class="auth-type-select" id="authTypeSelect" onchange="switchAuthType(this.value)">
+              <option value="none">No Auth</option>
+              <option value="bearer">Bearer Token</option>
+              <option value="basic">Basic Auth</option>
+              <option value="apikey">API Key</option>
+              <option value="oauth2">OAuth 2.0 (token)</option>
+            </select>
+          </div>
+          <div class="auth-fields" id="authFields"></div>
+        </div>
+      </div>
+
+      <!-- Scripts -->
+      <div class="tab-panel" id="panel-scripts">
+        <div style="padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;">
+          <div>
+            <div class="field-label" style="margin-bottom:8px">Pre-request Script</div>
+            <textarea class="code-editor" id="preScript" style="min-height:80px;border:1px solid var(--border);border-radius:var(--radius-sm)"
+              placeholder="// Runs before the request&#10;// env.set('token', '...')&#10;// headers.set('X-Custom', 'value')"></textarea>
+          </div>
+          <div>
+            <div class="field-label" style="margin-bottom:8px">Post-response Script (Tests)</div>
+            <textarea class="code-editor" id="postScript" style="min-height:80px;border:1px solid var(--border);border-radius:var(--radius-sm)"
+              placeholder="// Runs after the response&#10;// test('Status is 200', () => res.status === 200)&#10;// env.set('token', res.json.token)"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Splitter -->
+    <div class="splitter" id="splitter"></div>
+
+    <!-- Response Panel -->
+    <div class="response-panel" id="responsePanel">
+      <div class="response-header">
+        <span class="response-title">Response</span>
+        <div id="statusBadge"></div>
+        <div class="response-meta" id="responseMeta"></div>
+      </div>
+      <div class="response-tabs-bar" id="responseTabsBar">
+        <div class="tab active" data-resp-tab="pretty" onclick="switchRespTab('pretty')">Pretty</div>
+        <div class="tab" data-resp-tab="raw" onclick="switchRespTab('raw')">Raw</div>
+        <div class="tab" data-resp-tab="resp-headers" onclick="switchRespTab('resp-headers')">Headers <span class="tab-count" id="respHeadersCount">0</span></div>
+        <div class="tab" data-resp-tab="tests" onclick="switchRespTab('tests')">Tests</div>
+      </div>
+      <div class="response-body" id="responseBody">
+        <div class="response-placeholder">
+          <div class="placeholder-icon">&#9656;</div>
+          <div class="placeholder-text">Send a request to see the response</div>
+          <div class="placeholder-hint">Press <kbd class="kbd">Enter</kbd> in the URL field or click <strong>Send</strong></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-panel -->
+</div><!-- /app-body -->
+
+<!-- Save Request Modal -->
+<div class="modal-overlay hidden" id="saveModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Save Request</span>
+      <button class="modal-close" onclick="closeModal('saveModal')">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group">
+        <label class="field-label">Request Name</label>
+        <input type="text" class="modal-input" id="saveRequestName" placeholder="e.g. Get User Profile">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Collection</label>
+        <select class="modal-input" id="saveCollection">
+          <option value="__new__">+ New Collection</option>
+        </select>
+      </div>
+      <div id="newCollectionField" class="field-group hidden">
+        <label class="field-label">Collection Name</label>
+        <input type="text" class="modal-input" id="newCollectionName" placeholder="e.g. Wallet API">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('saveModal')">Cancel</button>
+      <button class="btn-primary" onclick="confirmSave()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Collection Modal -->
+<div class="modal-overlay hidden" id="newCollectionModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">New Collection</span>
+      <button class="modal-close" onclick="closeModal('newCollectionModal')">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group">
+        <label class="field-label">Collection Name</label>
+        <input type="text" class="modal-input" id="newCollNameInput" placeholder="e.g. Marri Wallet API">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Description (optional)</label>
+        <input type="text" class="modal-input" id="newCollDescInput" placeholder="Brief description...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('newCollectionModal')">Cancel</button>
+      <button class="btn-primary" onclick="confirmNewCollection()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Environment Modal -->
+<div class="modal-overlay hidden" id="envModal">
+  <div class="modal" style="width:560px">
+    <div class="modal-header">
+      <span class="modal-title">Environments</span>
+      <button class="modal-close" onclick="closeModal('envModal')">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <select class="modal-input" id="envEditSelect" style="flex:1" onchange="loadEnvForEdit(this.value)">
+          <option value="">Select environment...</option>
+        </select>
+        <button class="btn-primary" onclick="addNewEnv()" style="white-space:nowrap">+ New</button>
+      </div>
+      <div id="envEditArea" class="hidden">
+        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+          <input type="text" class="modal-input" id="envEditName" placeholder="Environment name" style="flex:1">
+          <button class="btn-secondary" onclick="deleteEnv()" style="color:var(--error);border-color:var(--error)">Delete</button>
+        </div>
+        <div id="envKvEditor"></div>
+        <button class="add-row-btn" onclick="addEnvVar()">&#43; Add Variable</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('envModal')">Close</button>
+      <button class="btn-primary" onclick="saveEnv()">Save Environment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import/Export Modal -->
+<div class="modal-overlay hidden" id="importExportModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Import / Export</span>
+      <button class="modal-close" onclick="closeModal('importExportModal')">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:10px">
+        <button class="btn-primary" onclick="exportData()" style="flex:1">&#8595; Export All Data</button>
+        <label class="btn-secondary" style="flex:1;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+          &#8593; Import Data
+          <input type="file" accept=".json" onchange="importData(event)" style="display:none">
+        </label>
+      </div>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:8px">Exports collections, history, and environments as JSON.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────────────────
+const state = {
+  method: 'GET',
+  url: '',
+  params: [],
+  headers: [],
+  bodyType: 'none',
+  bodyContent: '',
+  authType: 'none',
+  authData: {},
+  collections: [],
+  history: [],
+  environments: [],
+  activeEnv: null,
+  currentRequest: null,
+  abortController: null,
+};
+
+// ─────────────────────────────────────────────────────────
+// Persistence
+// ─────────────────────────────────────────────────────────
+function saveState() {
+  localStorage.setItem('marri_api_state', JSON.stringify({
+    collections: state.collections,
+    history: state.history.slice(0, 200),
+    environments: state.environments,
+    activeEnv: state.activeEnv,
+  }));
+}
+
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('marri_api_state') || '{}');
+    if (saved.collections)  state.collections  = saved.collections;
+    if (saved.history)      state.history      = saved.history;
+    if (saved.environments) state.environments = saved.environments;
+    if (saved.activeEnv)    state.activeEnv    = saved.activeEnv;
+  } catch(e) { console.warn('Failed to load state', e); }
+}
+
+// ─────────────────────────────────────────────────────────
+// KV Rows
+// ─────────────────────────────────────────────────────────
+function renderKvEditor(containerId, rows, onUpdate) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  rows.forEach((row, i) => {
+    const div = document.createElement('div');
+    div.className = 'kv-row';
+    div.innerHTML = `
+      <input type="checkbox" class="kv-checkbox" ${row.enabled !== false ? 'checked' : ''}
+             onchange="kvToggle('${containerId}',${i},this.checked)">
+      <input type="text" class="key-input" placeholder="Key" value="${escHtml(row.key||'')}"
+             oninput="kvChange('${containerId}',${i},'key',this.value)">
+      <input type="text" placeholder="Value" value="${escHtml(row.value||'')}"
+             oninput="kvChange('${containerId}',${i},'value',this.value)">
+      <button class="kv-delete-btn" onclick="kvDelete('${containerId}',${i})">&#215;</button>
+    `;
+    el.appendChild(div);
+  });
+  updateTabCounts();
+}
+
+function kvChange(editorId, index, field, value) {
+  const rows = getRowsRef(editorId);
+  rows[index][field] = value;
+  updateTabCounts();
+  if (editorId === 'paramsEditor') syncParamsToUrl();
+}
+
+function kvToggle(editorId, index, checked) {
+  const rows = getRowsRef(editorId);
+  rows[index].enabled = checked;
+  updateTabCounts();
+}
+
+function kvDelete(editorId, index) {
+  const rows = getRowsRef(editorId);
+  rows.splice(index, 1);
+  renderKvEditor(editorId, rows);
+  if (editorId === 'paramsEditor') syncParamsToUrl();
+}
+
+function addKvRow(type) {
+  const editorId = type === 'params' ? 'paramsEditor'
+                 : type === 'headers' ? 'headersEditor'
+                 : 'formEditor';
+  const rows = getRowsRef(editorId);
+  rows.push({ key: '', value: '', enabled: true });
+  renderKvEditor(editorId, rows);
+  const el = document.getElementById(editorId);
+  const inputs = el.querySelectorAll('.key-input');
+  inputs[inputs.length - 1].focus();
+}
+
+function getRowsRef(editorId) {
+  if (editorId === 'paramsEditor')  return state.params;
+  if (editorId === 'headersEditor') return state.headers;
+  if (editorId === 'formEditor')    return state.formData || (state.formData = []);
+  return [];
+}
+
+function updateTabCounts() {
+  const activeParams  = state.params.filter(r => r.key && r.enabled !== false).length;
+  const activeHeaders = state.headers.filter(r => r.key && r.enabled !== false).length;
+  const bodyActive    = state.bodyType !== 'none' && (state.bodyContent || '').trim() ? 1 : 0;
+  document.getElementById('paramsCount').textContent  = activeParams  || '0';
+  document.getElementById('headersCount').textContent = activeHeaders || '0';
+  document.getElementById('bodyCount').textContent    = bodyActive    || '0';
+}
+
+// ─────────────────────────────────────────────────────────
+// URL & Params sync
+// ─────────────────────────────────────────────────────────
+function onUrlInput(val) {
+  state.url = val;
+  document.getElementById('urlClearBtn').style.display = val ? 'block' : 'none';
+  parseUrlParams(val);
+}
+
+function clearUrl() {
+  document.getElementById('urlInput').value = '';
+  state.url = '';
+  state.params = [];
+  document.getElementById('urlClearBtn').style.display = 'none';
+  renderKvEditor('paramsEditor', state.params);
+  updateTabCounts();
+}
+
+function parseUrlParams(url) {
+  try {
+    const resolvedUrl = resolveEnvVars(url);
+    const u = new URL(resolvedUrl);
+    const newParams = [];
+    u.searchParams.forEach((v, k) => newParams.push({ key: k, value: v, enabled: true }));
+    // Preserve manually typed rows not yet in URL
+    state.params = newParams;
+    renderKvEditor('paramsEditor', state.params);
+  } catch(e) { /* invalid URL - ignore */ }
+}
+
+function syncParamsToUrl() {
+  try {
+    const rawUrl = document.getElementById('urlInput').value;
+    const baseUrl = rawUrl.split('?')[0];
+    const activeParams = state.params.filter(r => r.key && r.enabled !== false);
+    if (!activeParams.length) {
+      document.getElementById('urlInput').value = baseUrl;
+      return;
+    }
+    const q = activeParams.map(r => `${encodeURIComponent(r.key)}=${encodeURIComponent(r.value)}`).join('&');
+    document.getElementById('urlInput').value = `${baseUrl}?${q}`;
+    state.url = document.getElementById('urlInput').value;
+  } catch(e) {}
+}
+
+// ─────────────────────────────────────────────────────────
+// Method
+// ─────────────────────────────────────────────────────────
+function toggleMethodDropdown() {
+  document.getElementById('methodDropdown').classList.toggle('open');
+}
+
+function selectMethod(m) {
+  state.method = m;
+  const badge = document.getElementById('methodBadge');
+  badge.textContent = m.length > 6 ? m.substring(0,5)+'…' : m;
+  badge.className = `method-badge method-${['GET','POST','PUT','DELETE','PATCH','HEAD','OPTIONS'].includes(m) ? m : 'CUSTOM'}`;
+  document.getElementById('methodDropdown').classList.remove('open');
+}
+
+function showCustomMethod() {
+  document.getElementById('customMethodInput').classList.add('show');
+  document.getElementById('customMethodText').focus();
+}
+
+function applyCustomMethod() {
+  const val = document.getElementById('customMethodText').value.trim().toUpperCase();
+  if (val) selectMethod(val);
+  document.getElementById('customMethodInput').classList.remove('show');
+  document.getElementById('customMethodText').value = '';
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', e => {
+  if (!document.getElementById('methodSelector').contains(e.target)) {
+    document.getElementById('methodDropdown').classList.remove('open');
+  }
+});
+
+// ─────────────────────────────────────────────────────────
+// Tabs
+// ─────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab[data-tab]').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `panel-${tab}`));
+}
+
+function switchRespTab(tab) {
+  document.querySelectorAll('.tab[data-resp-tab]').forEach(t => t.classList.toggle('active', t.dataset.respTab === tab));
+  renderResponseTab(tab);
+}
+
+function switchSidebarTab(tab) {
+  document.querySelectorAll('.sidebar-tab[data-sidebar-tab]').forEach(t => t.classList.toggle('active', t.dataset.sidebarTab === tab));
+  document.getElementById('sidebarCollections').classList.toggle('hidden', tab !== 'collections');
+  document.getElementById('sidebarHistory').classList.toggle('hidden',     tab !== 'history');
+  if (tab === 'history') renderHistory();
+}
+
+// ─────────────────────────────────────────────────────────
+// Body
+// ─────────────────────────────────────────────────────────
+function switchBodyType(type) {
+  state.bodyType = type;
+  const codeWrapper = document.getElementById('bodyCodeWrapper');
+  const formWrapper = document.getElementById('bodyFormWrapper');
+  codeWrapper.classList.add('hidden');
+  formWrapper.classList.add('hidden');
+  if (type === 'json' || type === 'raw') {
+    codeWrapper.classList.remove('hidden');
+    if (type === 'json') document.getElementById('contentTypeSelect').value = 'application/json';
+  } else if (type === 'form' || type === 'urlencoded') {
+    formWrapper.classList.remove('hidden');
+    if (!state.formData) state.formData = [];
+    renderKvEditor('formEditor', state.formData);
+  }
+  updateTabCounts();
+}
+
+function updateContentType(ct) {
+  const existing = state.headers.findIndex(h => h.key.toLowerCase() === 'content-type');
+  if (existing >= 0) {
+    state.headers[existing].value = ct;
+  } else {
+    state.headers.push({ key: 'Content-Type', value: ct, enabled: true });
+  }
+  renderKvEditor('headersEditor', state.headers);
+}
+
+function beautifyBody() {
+  const ta = document.getElementById('bodyEditor');
+  try {
+    ta.value = JSON.stringify(JSON.parse(ta.value), null, 2);
+    state.bodyContent = ta.value;
+    showToast('Beautified!', 'success');
+  } catch(e) {
+    showToast('Invalid JSON', 'error');
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// Auth
+// ─────────────────────────────────────────────────────────
+function switchAuthType(type) {
+  state.authType = type;
+  const fields = document.getElementById('authFields');
+  fields.innerHTML = '';
+  if (type === 'bearer') {
+    fields.innerHTML = `
+      <div class="field-group">
+        <label class="field-label">Token</label>
+        <input class="field-input" type="text" id="bearerToken" placeholder="eyJhbGci..." value="${state.authData.token||''}"
+               oninput="state.authData.token=this.value">
+      </div>`;
+  } else if (type === 'basic') {
+    fields.innerHTML = `
+      <div class="field-group">
+        <label class="field-label">Username</label>
+        <input class="field-input" type="text" id="basicUser" placeholder="username" value="${state.authData.username||''}"
+               oninput="state.authData.username=this.value">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Password</label>
+        <input class="field-input" type="password" id="basicPass" placeholder="password" value="${state.authData.password||''}"
+               oninput="state.authData.password=this.value">
+      </div>`;
+  } else if (type === 'apikey') {
+    fields.innerHTML = `
+      <div class="field-group">
+        <label class="field-label">Key Name</label>
+        <input class="field-input" type="text" id="apikeyName" placeholder="X-API-Key" value="${state.authData.keyName||'X-API-Key'}"
+               oninput="state.authData.keyName=this.value">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Key Value</label>
+        <input class="field-input" type="text" id="apikeyValue" placeholder="your-api-key" value="${state.authData.keyValue||''}"
+               oninput="state.authData.keyValue=this.value">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Add To</label>
+        <select class="field-input" id="apikeyIn" onchange="state.authData.in=this.value">
+          <option value="header" ${state.authData.in==='header'?'selected':''}>Header</option>
+          <option value="query"  ${state.authData.in==='query'?'selected':''}>Query Param</option>
+        </select>
+      </div>`;
+  } else if (type === 'oauth2') {
+    fields.innerHTML = `
+      <div class="field-group">
+        <label class="field-label">Access Token</label>
+        <input class="field-input" type="text" id="oauth2Token" placeholder="Bearer token from OAuth flow" value="${state.authData.token||''}"
+               oninput="state.authData.token=this.value">
+      </div>`;
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// Environment Variables
+// ─────────────────────────────────────────────────────────
+function resolveEnvVars(str) {
+  if (!state.activeEnv) return str;
+  const env = state.environments.find(e => e.id === state.activeEnv);
+  if (!env) return str;
+  return str.replace(/\{\{(\w+)\}\}/g, (_, key) => {
+    const v = env.variables.find(v => v.key === key);
+    return v ? v.value : `{{${key}}}`;
+  });
+}
+
+function switchEnvironment(envId) {
+  state.activeEnv = envId || null;
+  const dot = document.getElementById('envDot');
+  dot.style.background = envId ? 'var(--success)' : 'var(--text-muted)';
+  saveState();
+}
+
+function syncEnvSelects() {
+  const envSelect = document.getElementById('envSelect');
+  const envEditSelect = document.getElementById('envEditSelect');
+  envSelect.innerHTML = '<option value="">No Environment</option>';
+  envEditSelect.innerHTML = '<option value="">Select environment...</option>';
+  state.environments.forEach(env => {
+    envSelect.innerHTML += `<option value="${env.id}" ${state.activeEnv===env.id?'selected':''}>${escHtml(env.name)}</option>`;
+    envEditSelect.innerHTML += `<option value="${env.id}">${escHtml(env.name)}</option>`;
+  });
+}
+
+function openEnvModal() {
+  syncEnvSelects();
+  document.getElementById('envEditArea').classList.add('hidden');
+  openModal('envModal');
+}
+
+function loadEnvForEdit(envId) {
+  if (!envId) { document.getElementById('envEditArea').classList.add('hidden'); return; }
+  const env = state.environments.find(e => e.id === envId);
+  if (!env) return;
+  document.getElementById('envEditArea').classList.remove('hidden');
+  document.getElementById('envEditName').value = env.name;
+  renderEnvKvEditor(env.variables);
+}
+
+function renderEnvKvEditor(vars) {
+  const el = document.getElementById('envKvEditor');
+  el.innerHTML = '';
+  (vars||[]).forEach((v, i) => {
+    const row = document.createElement('div');
+    row.className = 'kv-row';
+    row.innerHTML = `
+      <input type="text" class="key-input" placeholder="Variable name" value="${escHtml(v.key||'')}"
+             oninput="updateEnvVar(${i},'key',this.value)" style="font-size:12px">
+      <input type="text" placeholder="Value" value="${escHtml(v.value||'')}"
+             oninput="updateEnvVar(${i},'value',this.value)" style="font-size:12px">
+      <button class="kv-delete-btn" onclick="deleteEnvVar(${i})">&#215;</button>
+    `;
+    el.appendChild(row);
+  });
+}
+
+function updateEnvVar(idx, field, val) {
+  const envId = document.getElementById('envEditSelect').value;
+  const env = state.environments.find(e => e.id === envId);
+  if (env) env.variables[idx][field] = val;
+}
+
+function deleteEnvVar(idx) {
+  const envId = document.getElementById('envEditSelect').value;
+  const env = state.environments.find(e => e.id === envId);
+  if (env) {
+    env.variables.splice(idx, 1);
+    renderEnvKvEditor(env.variables);
+  }
+}
+
+function addEnvVar() {
+  const envId = document.getElementById('envEditSelect').value;
+  const env = state.environments.find(e => e.id === envId);
+  if (env) {
+    env.variables.push({ key: '', value: '' });
+    renderEnvKvEditor(env.variables);
+  }
+}
+
+function addNewEnv() {
+  const env = { id: uid(), name: 'New Environment', variables: [] };
+  state.environments.push(env);
+  syncEnvSelects();
+  document.getElementById('envEditSelect').value = env.id;
+  loadEnvForEdit(env.id);
+}
+
+function deleteEnv() {
+  const envId = document.getElementById('envEditSelect').value;
+  state.environments = state.environments.filter(e => e.id !== envId);
+  if (state.activeEnv === envId) {
+    state.activeEnv = null;
+    document.getElementById('envDot').style.background = 'var(--text-muted)';
+  }
+  syncEnvSelects();
+  document.getElementById('envEditArea').classList.add('hidden');
+  saveState();
+  showToast('Environment deleted', 'info');
+}
+
+function saveEnv() {
+  const envId = document.getElementById('envEditSelect').value;
+  const env = state.environments.find(e => e.id === envId);
+  if (env) {
+    env.name = document.getElementById('envEditName').value || env.name;
+    syncEnvSelects();
+  }
+  saveState();
+  showToast('Environment saved!', 'success');
+}
+
+// ─────────────────────────────────────────────────────────
+// Send Request
+// ─────────────────────────────────────────────────────────
+async function sendRequest() {
+  const rawUrl = document.getElementById('urlInput').value.trim();
+  if (!rawUrl) { showToast('Enter a URL first', 'error'); return; }
+
+  const url = resolveEnvVars(rawUrl);
+  if (!url.startsWith('http')) { showToast('URL must start with http:// or https://', 'error'); return; }
+
+  // Run pre-request script
+  try { runScript(document.getElementById('preScript').value, 'pre', {}); } catch(e) {}
+
+  setLoading(true);
+  const start = Date.now();
+
+  const headers = new Headers();
+  state.headers.filter(h => h.key && h.enabled !== false).forEach(h => {
+    headers.set(resolveEnvVars(h.key), resolveEnvVars(h.value));
+  });
+
+  // Auth
+  if (state.authType === 'bearer' && state.authData.token) {
+    headers.set('Authorization', `Bearer ${state.authData.token}`);
+  } else if (state.authType === 'basic' && state.authData.username) {
+    headers.set('Authorization', 'Basic ' + btoa(`${state.authData.username}:${state.authData.password||''}`));
+  } else if (state.authType === 'apikey' && state.authData.keyValue) {
+    if (state.authData.in === 'query') { /* handled via URL */ }
+    else headers.set(state.authData.keyName || 'X-API-Key', state.authData.keyValue);
+  } else if (state.authType === 'oauth2' && state.authData.token) {
+    headers.set('Authorization', `Bearer ${state.authData.token}`);
+  }
+
+  let body = undefined;
+  if (!['GET','HEAD'].includes(state.method)) {
+    if (state.bodyType === 'json' || state.bodyType === 'raw') {
+      body = resolveEnvVars(document.getElementById('bodyEditor').value);
+      if (state.bodyType === 'json') headers.set('Content-Type', 'application/json');
+    } else if (state.bodyType === 'form') {
+      const fd = new FormData();
+      (state.formData||[]).filter(r => r.key && r.enabled !== false).forEach(r => fd.append(r.key, r.value));
+      body = fd;
+    } else if (state.bodyType === 'urlencoded') {
+      const params = (state.formData||[]).filter(r => r.key && r.enabled !== false)
+        .map(r => `${encodeURIComponent(r.key)}=${encodeURIComponent(r.value)}`).join('&');
+      body = params;
+      headers.set('Content-Type', 'application/x-www-form-urlencoded');
+    }
+  }
+
+  // Build final URL with API key query param if needed
+  let finalUrl = url;
+  if (state.authType === 'apikey' && state.authData.in === 'query' && state.authData.keyValue) {
+    const sep = finalUrl.includes('?') ? '&' : '?';
+    finalUrl += `${sep}${encodeURIComponent(state.authData.keyName||'api_key')}=${encodeURIComponent(state.authData.keyValue)}`;
+  }
+
+  state.abortController = new AbortController();
+
+  try {
+    const res = await fetch(finalUrl, {
+      method: state.method,
+      headers,
+      body,
+      signal: state.abortController.signal,
+    });
+
+    const elapsed = Date.now() - start;
+    const contentType = res.headers.get('content-type') || '';
+    let responseText = await res.text();
+
+    // Run post-response script
+    let testResults = [];
+    try {
+      const resObj = {
+        status: res.status,
+        json: contentType.includes('json') ? JSON.parse(responseText) : null,
+        text: responseText,
+        headers: {},
+      };
+      res.headers.forEach((v, k) => resObj.headers[k] = v);
+      testResults = runScript(document.getElementById('postScript').value, 'post', resObj);
+    } catch(e) {}
+
+    // Add to history
+    addToHistory({ method: state.method, url: rawUrl, status: res.status, elapsed, timestamp: Date.now() });
+
+    renderResponse(res, responseText, elapsed, testResults);
+
+  } catch(e) {
+    if (e.name === 'AbortError') {
+      showToast('Request cancelled', 'info');
+    } else {
+      renderError(e, Date.now() - start);
+    }
+  } finally {
+    setLoading(false);
+  }
+}
+
+function cancelRequest() {
+  if (state.abortController) {
+    state.abortController.abort();
+    state.abortController = null;
+  }
+}
+
+function setLoading(loading) {
+  const btn = document.getElementById('sendBtn');
+  const icon = document.getElementById('sendBtnIcon');
+  const text = document.getElementById('sendBtnText');
+  const bar  = document.getElementById('loadingBar');
+  if (loading) {
+    btn.classList.add('loading');
+    btn.onclick = cancelRequest;
+    icon.className = 'spinner';
+    icon.textContent = '';
+    text.textContent = 'Cancel';
+    bar.classList.add('active');
+    bar.style.width = '70%';
+  } else {
+    btn.classList.remove('loading');
+    btn.onclick = sendRequest;
+    icon.className = '';
+    icon.innerHTML = '&#9658;';
+    text.textContent = 'Send';
+    bar.classList.remove('active');
+    bar.style.width = '100%';
+    setTimeout(() => { bar.style.width = '0'; }, 300);
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// Response Rendering
+// ─────────────────────────────────────────────────────────
+let lastResponse = null;
+
+function renderResponse(res, text, elapsed, testResults) {
+  const statusClass = `status-${Math.floor(res.status/100)}xx`;
+  const statusText = res.statusText || statusCodeLabel(res.status);
+
+  document.getElementById('statusBadge').innerHTML = `
+    <div class="status-badge ${statusClass}">
+      <span>${res.status}</span>
+      <span>${statusText}</span>
+    </div>`;
+
+  const speedClass = elapsed < 200 ? 'fast' : elapsed < 1000 ? '' : elapsed < 3000 ? 'slow' : 'very-slow';
+  const size = new Blob([text]).size;
+  document.getElementById('responseMeta').innerHTML = `
+    <div class="meta-item"><span class="meta-label">Time</span> <span class="meta-value ${speedClass}">${elapsed}ms</span></div>
+    <div class="meta-item"><span class="meta-label">Size</span> <span class="meta-value">${formatBytes(size)}</span></div>
+  `;
+
+  // Collect headers
+  const respHeaders = [];
+  res.headers.forEach((v, k) => respHeaders.push({ k, v }));
+  document.getElementById('respHeadersCount').textContent = respHeaders.length;
+
+  const ct = res.headers.get('content-type') || '';
+  let pretty = text;
+  let isJson = false;
+  if (ct.includes('json')) {
+    try { pretty = JSON.stringify(JSON.parse(text), null, 2); isJson = true; } catch(e) {}
+  }
+
+  lastResponse = { text, pretty, isJson, respHeaders, testResults };
+  switchRespTab('pretty');
+}
+
+function renderResponseTab(tab) {
+  const body = document.getElementById('responseBody');
+  if (!lastResponse) return;
+  const { text, pretty, isJson, respHeaders, testResults } = lastResponse;
+
+  if (tab === 'pretty') {
+    const html = isJson ? syntaxHighlightJson(pretty) : `<div class="raw-viewer">${escHtml(pretty)}</div>`;
+    body.innerHTML = `
+      <button class="copy-btn" onclick="copyToClipboard('${encodeURIComponent(pretty)}')" title="Copy">&#128203; Copy</button>
+      <div class="json-viewer">${isJson ? html : escHtml(pretty)}</div>`;
+  } else if (tab === 'raw') {
+    body.innerHTML = `
+      <button class="copy-btn" onclick="copyToClipboard('${encodeURIComponent(text)}')" title="Copy">&#128203; Copy</button>
+      <div class="raw-viewer">${escHtml(text)}</div>`;
+  } else if (tab === 'resp-headers') {
+    body.innerHTML = '<div class="headers-viewer">' +
+      respHeaders.map(h => `<div class="header-row"><span class="header-key">${escHtml(h.k)}</span><span class="header-val">${escHtml(h.v)}</span></div>`).join('') +
+      '</div>';
+  } else if (tab === 'tests') {
+    if (!testResults || !testResults.length) {
+      body.innerHTML = `<div class="response-placeholder"><div class="placeholder-icon">&#10003;</div><div class="placeholder-text">No tests defined</div><div class="placeholder-hint">Add tests in the Scripts tab using test('name', () => assertion)</div></div>`;
+    } else {
+      body.innerHTML = '<div style="padding:12px 16px">' +
+        testResults.map(t => `
+          <div style="display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border-light)">
+            <span style="color:${t.passed?'var(--success)':'var(--error)'};font-size:14px">${t.passed?'✓':'✗'}</span>
+            <span style="font-size:12px;color:${t.passed?'var(--text-primary)':'var(--error)'};">${escHtml(t.name)}</span>
+          </div>`).join('') +
+        '</div>';
+    }
+  }
+}
+
+function renderError(e, elapsed) {
+  document.getElementById('statusBadge').innerHTML = `<div class="status-badge status-5xx">ERROR</div>`;
+  document.getElementById('responseMeta').innerHTML = `<div class="meta-item"><span class="meta-value">${elapsed}ms</span></div>`;
+  document.getElementById('responseBody').innerHTML = `
+    <div class="response-placeholder" style="color:var(--error)">
+      <div style="font-size:24px">⚠</div>
+      <div class="placeholder-text">${escHtml(e.message)}</div>
+      <div class="placeholder-hint" style="color:var(--text-muted)">Check the URL, CORS settings, or network connectivity</div>
+    </div>`;
+  lastResponse = null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Scripting Engine
+// ─────────────────────────────────────────────────────────
+function runScript(code, phase, resObj) {
+  if (!code.trim()) return [];
+  const tests = [];
+  const env = {
+    set: (k, v) => {
+      const envObj = state.environments.find(e => e.id === state.activeEnv);
+      if (envObj) { const existing = envObj.variables.find(x => x.key===k); if(existing) existing.value=v; else envObj.variables.push({key:k,value:v}); }
+    },
+    get: (k) => { const envObj = state.environments.find(e => e.id === state.activeEnv); return envObj?.variables.find(x=>x.key===k)?.value || ''; },
+  };
+  const test = (name, fn) => { try { const passed = !!fn(); tests.push({ name, passed }); } catch(e) { tests.push({ name, passed: false }); } };
+  const res = resObj;
+  try { new Function('env','test','res', code)(env, test, res); } catch(e) { console.warn('Script error:', e); }
+  return tests;
+}
+
+// ─────────────────────────────────────────────────────────
+// Collections
+// ─────────────────────────────────────────────────────────
+function renderCollections(filter) {
+  const tree = document.getElementById('collectionsTree');
+  tree.innerHTML = '';
+
+  const filtered = filter
+    ? state.collections.map(c => ({...c, requests: c.requests.filter(r => r.name.toLowerCase().includes(filter.toLowerCase()) || r.url.toLowerCase().includes(filter.toLowerCase()))})).filter(c => c.requests.length)
+    : state.collections;
+
+  filtered.forEach(col => {
+    const colEl = document.createElement('div');
+    colEl.className = 'collection-group';
+
+    const isOpen = col.open !== false;
+    colEl.innerHTML = `
+      <div class="collection-header ${isOpen?'open':''}" onclick="toggleCollection('${col.id}')">
+        <span class="collection-icon">&#128193;</span>
+        <span class="collection-name">${escHtml(col.name)}</span>
+        <span class="collection-count">${col.requests.length}</span>
+        <span class="collection-arrow">&#9656;</span>
+      </div>
+      <div class="collection-requests" ${isOpen?'':'style="display:none"'} id="col-${col.id}">
+        ${col.requests.map((r,i) => `
+          <div class="request-item" onclick="loadRequest('${col.id}',${i})" data-col="${col.id}" data-idx="${i}">
+            <span class="method-badge method-${['GET','POST','PUT','DELETE','PATCH','HEAD','OPTIONS'].includes(r.method)?r.method:'CUSTOM'}">${r.method.length>5?r.method.substring(0,4)+'…':r.method}</span>
+            <span class="request-name" title="${escHtml(r.url)}">${escHtml(r.name)}</span>
+            <button class="kv-delete-btn" onclick="event.stopPropagation();deleteRequest('${col.id}',${i})" title="Delete" style="opacity:0;transition:opacity 0.15s">&#215;</button>
+          </div>`).join('')}
+      </div>
+    `;
+
+    // Show delete button on hover
+    colEl.querySelectorAll('.request-item').forEach(el => {
+      const btn = el.querySelector('.kv-delete-btn');
+      el.addEventListener('mouseenter', () => btn.style.opacity = '1');
+      el.addEventListener('mouseleave', () => btn.style.opacity = '0');
+    });
+
+    tree.appendChild(colEl);
+  });
+}
+
+function toggleCollection(colId) {
+  const col = state.collections.find(c => c.id === colId);
+  if (col) {
+    col.open = !col.open;
+    renderCollections();
+  }
+}
+
+function filterRequests(val) { renderCollections(val); }
+
+function loadRequest(colId, idx) {
+  const col = state.collections.find(c => c.id === colId);
+  if (!col) return;
+  const req = col.requests[idx];
+  if (!req) return;
+
+  selectMethod(req.method);
+  document.getElementById('urlInput').value = req.url;
+  state.url = req.url;
+  document.getElementById('urlClearBtn').style.display = req.url ? 'block' : 'none';
+  state.params  = JSON.parse(JSON.stringify(req.params  || []));
+  state.headers = JSON.parse(JSON.stringify(req.headers || []));
+  state.bodyType = req.bodyType || 'none';
+  state.bodyContent = req.bodyContent || '';
+  state.authType = req.authType || 'none';
+  state.authData = JSON.parse(JSON.stringify(req.authData || {}));
+
+  renderKvEditor('paramsEditor',  state.params);
+  renderKvEditor('headersEditor', state.headers);
+  document.getElementById('bodyEditor').value = state.bodyContent;
+  switchBodyType(state.bodyType);
+  switchAuthType(state.authType);
+
+  // Mark active
+  document.querySelectorAll('.request-item').forEach(el => el.classList.remove('active'));
+  const el = document.querySelector(`[data-col="${colId}"][data-idx="${idx}"]`);
+  if (el) el.classList.add('active');
+
+  state.currentRequest = { colId, idx };
+  showToast(`Loaded: ${req.name}`, 'info');
+}
+
+function deleteRequest(colId, idx) {
+  const col = state.collections.find(c => c.id === colId);
+  if (col) {
+    col.requests.splice(idx, 1);
+    renderCollections();
+    saveState();
+    showToast('Request deleted', 'info');
+  }
+}
+
+function openNewCollectionModal() {
+  document.getElementById('newCollNameInput').value = '';
+  document.getElementById('newCollDescInput').value = '';
+  openModal('newCollectionModal');
+  setTimeout(() => document.getElementById('newCollNameInput').focus(), 100);
+}
+
+function confirmNewCollection() {
+  const name = document.getElementById('newCollNameInput').value.trim();
+  if (!name) { showToast('Enter a collection name', 'error'); return; }
+  const col = { id: uid(), name, description: document.getElementById('newCollDescInput').value, requests: [], open: true };
+  state.collections.push(col);
+  renderCollections();
+  saveState();
+  closeModal('newCollectionModal');
+  showToast(`Collection "${name}" created!`, 'success');
+}
+
+// ─────────────────────────────────────────────────────────
+// Save Request
+// ─────────────────────────────────────────────────────────
+function saveCurrentRequest() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) { showToast('Enter a URL first', 'error'); return; }
+
+  // Pre-fill name from URL path
+  try {
+    const u = new URL(resolveEnvVars(url));
+    document.getElementById('saveRequestName').value = u.pathname.split('/').filter(Boolean).slice(-1)[0] || u.hostname;
+  } catch(e) {
+    document.getElementById('saveRequestName').value = url.split('/').filter(Boolean).slice(-1)[0] || 'New Request';
+  }
+
+  // Populate collection dropdown
+  const sel = document.getElementById('saveCollection');
+  sel.innerHTML = '<option value="__new__">+ New Collection</option>';
+  state.collections.forEach(c => {
+    sel.innerHTML += `<option value="${c.id}">${escHtml(c.name)}</option>`;
+  });
+  if (state.collections.length) sel.value = state.collections[0].id;
+
+  sel.onchange = () => {
+    document.getElementById('newCollectionField').classList.toggle('hidden', sel.value !== '__new__');
+  };
+  document.getElementById('newCollectionField').classList.add('hidden');
+
+  openModal('saveModal');
+  setTimeout(() => document.getElementById('saveRequestName').focus(), 100);
+}
+
+function confirmSave() {
+  const name = document.getElementById('saveRequestName').value.trim();
+  if (!name) { showToast('Enter a request name', 'error'); return; }
+  const sel = document.getElementById('saveCollection');
+  let colId = sel.value;
+
+  if (colId === '__new__') {
+    const colName = document.getElementById('newCollectionName').value.trim() || 'New Collection';
+    const col = { id: uid(), name: colName, requests: [], open: true };
+    state.collections.push(col);
+    colId = col.id;
+  }
+
+  const col = state.collections.find(c => c.id === colId);
+  if (!col) return;
+
+  const req = {
+    id: uid(),
+    name,
+    method: state.method,
+    url: document.getElementById('urlInput').value,
+    params:  JSON.parse(JSON.stringify(state.params)),
+    headers: JSON.parse(JSON.stringify(state.headers)),
+    bodyType: state.bodyType,
+    bodyContent: document.getElementById('bodyEditor').value,
+    authType: state.authType,
+    authData: JSON.parse(JSON.stringify(state.authData)),
+  };
+
+  col.requests.push(req);
+  renderCollections();
+  saveState();
+  closeModal('saveModal');
+  showToast(`Saved: ${name}`, 'success');
+}
+
+// ─────────────────────────────────────────────────────────
+// History
+// ─────────────────────────────────────────────────────────
+function addToHistory(entry) {
+  state.history.unshift(entry);
+  if (state.history.length > 200) state.history = state.history.slice(0, 200);
+  saveState();
+}
+
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  if (!state.history.length) {
+    el.innerHTML = `<div class="response-placeholder" style="margin-top:40px"><div class="placeholder-text">No history yet</div></div>`;
+    return;
+  }
+  el.innerHTML = state.history.slice(0, 100).map((h, i) => `
+    <div class="history-item" onclick="loadFromHistory(${i})" title="${escHtml(h.url)}">
+      <span class="method-badge method-${['GET','POST','PUT','DELETE','PATCH','HEAD','OPTIONS'].includes(h.method)?h.method:'CUSTOM'}" style="font-size:8px;min-width:30px">${h.method.substring(0,4)}</span>
+      <span class="history-url">${escHtml(h.url)}</span>
+      <span class="status-badge ${`status-${Math.floor(h.status/100)}xx`}" style="font-size:9px;padding:1px 5px">${h.status}</span>
+      <span class="history-time">${formatTime(h.timestamp)}</span>
+    </div>`).join('');
+}
+
+function loadFromHistory(idx) {
+  const h = state.history[idx];
+  if (!h) return;
+  selectMethod(h.method);
+  document.getElementById('urlInput').value = h.url;
+  state.url = h.url;
+  document.getElementById('urlClearBtn').style.display = h.url ? 'block' : 'none';
+}
+
+// ─────────────────────────────────────────────────────────
+// Import / Export
+// ─────────────────────────────────────────────────────────
+function openImportExport() { openModal('importExportModal'); }
+
+function exportData() {
+  const data = JSON.stringify({ collections: state.collections, environments: state.environments, history: state.history }, null, 2);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+  a.download = `marri-api-export-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  showToast('Data exported!', 'success');
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.collections) state.collections = data.collections;
+      if (data.environments) state.environments = data.environments;
+      if (data.history) state.history = data.history;
+      renderCollections();
+      syncEnvSelects();
+      saveState();
+      closeModal('importExportModal');
+      showToast('Data imported!', 'success');
+    } catch(e) {
+      showToast('Invalid file format', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ─────────────────────────────────────────────────────────
+// Splitter (resize)
+// ─────────────────────────────────────────────────────────
+(function() {
+  const splitter = document.getElementById('splitter');
+  const reqConfig = document.querySelector('.request-config');
+  const respPanel = document.getElementById('responsePanel');
+  let dragging = false, startY, startReqH, startRespH;
+
+  splitter.addEventListener('mousedown', e => {
+    dragging = true;
+    startY    = e.clientY;
+    startReqH  = reqConfig.offsetHeight;
+    startRespH = respPanel.offsetHeight;
+    splitter.classList.add('dragging');
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const delta = e.clientY - startY;
+    const newReqH  = Math.max(80, startReqH  + delta);
+    const newRespH = Math.max(80, startRespH - delta);
+    reqConfig.style.height  = newReqH  + 'px';
+    respPanel.style.height  = newRespH + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (dragging) {
+      dragging = false;
+      splitter.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+  });
+})();
+
+// Sidebar resize
+(function() {
+  const resizer = document.getElementById('sidebarResizer');
+  const sidebar = document.getElementById('sidebar');
+  let dragging = false, startX, startW;
+
+  resizer.addEventListener('mousedown', e => {
+    dragging = true; startX = e.clientX; startW = sidebar.offsetWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    sidebar.style.width = Math.min(380, Math.max(180, startW + (e.clientX - startX))) + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    dragging = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+})();
+
+// ─────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────
+function uid() { return Math.random().toString(36).substring(2) + Date.now().toString(36); }
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function formatBytes(b) { return b<1024?`${b}B`:b<1048576?`${(b/1024).toFixed(1)}KB`:`${(b/1048576).toFixed(2)}MB`; }
+function formatTime(ts) { const d=new Date(ts), now=new Date(); return now-d<60000?'just now':now-d<3600000?`${Math.floor((now-d)/60000)}m ago`:d.toLocaleTimeString(); }
+
+function statusCodeLabel(code) {
+  const map = { 200:'OK',201:'Created',204:'No Content',301:'Moved',302:'Found',304:'Not Modified',400:'Bad Request',401:'Unauthorized',403:'Forbidden',404:'Not Found',405:'Method Not Allowed',409:'Conflict',422:'Unprocessable',429:'Too Many Requests',500:'Server Error',502:'Bad Gateway',503:'Service Unavailable' };
+  return map[code] || '';
+}
+
+function syntaxHighlightJson(json) {
+  return json
+    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, match => {
+      let cls = 'json-num';
+      if (/^"/.test(match)) cls = /:$/.test(match) ? 'json-key' : 'json-str';
+      else if (/true|false/.test(match)) cls = 'json-bool';
+      else if (/null/.test(match)) cls = 'json-null';
+      return `<span class="${cls}">${escHtml(match)}</span>`;
+    })
+    .replace(/([{}\[\],])/g, '<span class="json-punct">$1</span>');
+}
+
+function copyToClipboard(encodedText) {
+  navigator.clipboard.writeText(decodeURIComponent(encodedText))
+    .then(() => showToast('Copied to clipboard!', 'success'))
+    .catch(() => showToast('Copy failed', 'error'));
+}
+
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  const icons = { success: '✓', error: '✗', info: 'ℹ' };
+  toast.innerHTML = `<span style="font-size:14px">${icons[type]||'ℹ'}</span> ${escHtml(msg)}`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.animation = 'none';
+    toast.style.transition = 'opacity 0.3s,transform 0.3s';
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(20px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 2500);
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.remove('hidden');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.add('hidden');
+  });
+});
+
+// ─────────────────────────────────────────────────────────
+// Keyboard Shortcuts
+// ─────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); sendRequest(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 's')     { e.preventDefault(); saveCurrentRequest(); }
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') { e.preventDefault(); openNewCollectionModal(); }
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
+    document.getElementById('methodDropdown').classList.remove('open');
+  }
+});
+
+// ─────────────────────────────────────────────────────────
+// Body editor sync
+// ─────────────────────────────────────────────────────────
+document.getElementById('bodyEditor').addEventListener('input', function() {
+  state.bodyContent = this.value;
+  updateTabCounts();
+});
+
+// ─────────────────────────────────────────────────────────
+// Bootstrap with Marri Wallet defaults
+// ─────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+// Default Data — Marri Wallet API (all endpoints from README)
+// ─────────────────────────────────────────────────────────
+const DATA_VERSION = '2';
+
+const CH = `"channelDetails": {\n    "deviceId": "device-abc123",\n    "channel": "MOBILE",\n    "name": "Samsung Galaxy S23",\n    "osVersion": "14",\n    "appVersion": "1.0.0",\n    "ipAddress": "192.168.1.1",\n    "os": "Android"\n  }`;
+const CH_WEB = `"channelDetails": { "deviceId": "admin-portal", "channel": "WEB" }`;
+const CH_API = `"channelDetails": { "deviceId": "server-001", "channel": "API" }`;
+
+function makeDefaultState() {
+  const envId = uid();
+  const environments = [{
+    id: envId,
+    name: 'Marri Local',
+    variables: [
+      { key: 'gateway',      value: 'http://localhost:8080' },
+      { key: 'auth_url',     value: 'http://localhost:8093' },
+      { key: 'user_url',     value: 'http://localhost:8091' },
+      { key: 'wallet_url',   value: 'http://localhost:8090' },
+      { key: 'payment_url',  value: 'http://localhost:8092' },
+      { key: 'token',        value: '' },
+      { key: 'admin_token',  value: '' },
+      { key: 'customer_id',  value: '' },
+      { key: 'device_id',    value: '' },
+    ]
+  }];
+
+  const B = (obj) => JSON.stringify(obj, null, 2); // shorthand
+
+  const collections = [
+
+    // ── 1. Auth Service ────────────────────────────────────────
+    {
+      id: uid(), name: '1. Auth Service  (8093)', open: true,
+      requests: [
+        {
+          id: uid(), name: 'User Login', method: 'POST',
+          url: '{{auth_url}}/api/v1/auth/login',
+          params:[], headers:[], bodyType:'json', authType:'none', authData:{},
+          bodyContent: `{\n  "data": {\n    "phoneNumber": "+254712345678",\n    "pin": "1234"\n  },\n  ${CH}\n}`,
+        },
+        {
+          id: uid(), name: 'Integrator Login', method: 'POST',
+          url: '{{auth_url}}/api/v1/auth/integrator/login',
+          params:[], headers:[], bodyType:'json', authType:'none', authData:{},
+          bodyContent: `{\n  "data": {\n    "accessKey": "INTGR-KEY-abc123",\n    "accessSecret": "INTGR-SECRET-xyz789"\n  },\n  ${CH_API}\n}`,
+        },
+        {
+          id: uid(), name: 'Admin Login', method: 'POST',
+          url: '{{auth_url}}/api/v1/auth/admin/login',
+          params:[], headers:[], bodyType:'json', authType:'none', authData:{},
+          bodyContent: `{\n  "data": {\n    "username": "admin",\n    "password": "Admin@1234!"\n  },\n  ${CH_WEB}\n}`,
+        },
+        {
+          id: uid(), name: 'Create Integrator', method: 'POST',
+          url: '{{auth_url}}/api/v1/auth/integrator',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{admin_token}}'},
+          bodyContent: `{\n  "data": {\n    "name": "Acme Corp",\n    "description": "Acme payment integrator"\n  },\n  ${CH_WEB}\n}`,
+        },
+        {
+          id: uid(), name: 'Get JWK Set', method: 'GET',
+          url: '{{auth_url}}/.well-known/jwks.json',
+          params:[], headers:[], bodyType:'none', bodyContent:'', authType:'none', authData:{},
+        },
+      ]
+    },
+
+    // ── 2. User Management ─────────────────────────────────────
+    {
+      id: uid(), name: '2. User Management  (8091)', open: false,
+      requests: [
+        {
+          id: uid(), name: 'Register User', method: 'POST',
+          url: '{{gateway}}/api/v2/users/register',
+          params:[], headers:[], bodyType:'json', authType:'none', authData:{},
+          bodyContent: B({
+            firstName: "John", lastName: "Doe",
+            phoneNumber: "254712345678", email: "john.doe@example.com",
+            idType: "NATIONAL_ID", idNumber: "12345678",
+            deviceId: "device-abc123", deviceType: "ANDROID",
+            channel: "MOBILE", deviceModel: "Samsung Galaxy S23",
+            appVersion: "1.0.0"
+          }),
+        },
+        {
+          id: uid(), name: 'Verify OTP', method: 'POST',
+          url: '{{gateway}}/api/v2/users/verify-otp',
+          params:[], headers:[], bodyType:'json', authType:'none', authData:{},
+          bodyContent: `{\n  "data": {\n    "phoneNumber": "+254712345678",\n    "otp": "123456",\n    "purpose": "REGISTRATION"\n  },\n  ${CH}\n}`,
+        },
+        {
+          id: uid(), name: 'Resend OTP', method: 'POST',
+          url: '{{gateway}}/api/v2/users/resend-otp',
+          params:[], headers:[], bodyType:'json', authType:'none', authData:{},
+          bodyContent: `{\n  "data": {\n    "phoneNumber": "+254712345678",\n    "purpose": "REGISTRATION"\n  },\n  ${CH}\n}`,
+        },
+        {
+          id: uid(), name: 'Set PIN', method: 'POST',
+          url: '{{gateway}}/api/v2/users/set-pin',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: `{\n  "data": {\n    "pin": "1234",\n    "customerId": "{{customer_id}}"\n  },\n  ${CH}\n}`,
+        },
+        {
+          id: uid(), name: 'Get Customer Profile', method: 'GET',
+          url: '{{gateway}}/api/v2/users/{{customer_id}}',
+          params:[], headers:[], bodyType:'none', bodyContent:'', authType:'bearer', authData:{token:'{{token}}'},
+        },
+        {
+          id: uid(), name: 'Lookup by Phone', method: 'POST',
+          url: '{{gateway}}/api/v2/users/lookup',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: B({ phoneNumber: "+254712345678" }),
+        },
+        {
+          id: uid(), name: 'Get KYC Documents', method: 'GET',
+          url: '{{gateway}}/api/v2/users/{{customer_id}}/kyc/documents',
+          params:[], headers:[], bodyType:'none', bodyContent:'', authType:'bearer', authData:{token:'{{token}}'},
+        },
+        {
+          id: uid(), name: 'List Customer Devices', method: 'GET',
+          url: '{{gateway}}/api/v2/users/{{customer_id}}/devices',
+          params:[], headers:[], bodyType:'none', bodyContent:'', authType:'bearer', authData:{token:'{{token}}'},
+        },
+        {
+          id: uid(), name: 'Update Device Status', method: 'PATCH',
+          url: '{{gateway}}/api/v2/users/{{customer_id}}/devices/{{device_id}}/status',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: B({ status: "BLOCKED" }),
+        },
+      ]
+    },
+
+    // ── 3. Wallet Service ──────────────────────────────────────
+    {
+      id: uid(), name: '3. Wallet Service  (8090)', open: false,
+      requests: [
+        {
+          id: uid(), name: 'Open Wallet Account', method: 'POST',
+          url: '{{gateway}}/api/v2/accounts',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: `{\n  "data": {\n    "currency": "KES",\n    "accountPrefix": "WLT",\n    "phoneNumber": "+254712345678",\n    "accountName": "John Doe",\n    "openingBalance": 0.00\n  },\n  ${CH}\n}`,
+        },
+        {
+          id: uid(), name: 'Fund Transfer', method: 'POST',
+          url: '{{gateway}}/api/v2/transactions/ft',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: `{\n  "data": {\n    "debitAccount": "WLT0000001",\n    "creditAccount": "WLT0000002",\n    "amount": 500.00,\n    "presentment": false,\n    "transactionType": "FT",\n    "currency": "KES",\n    "phoneNumber": "+254712345678"\n  },\n  ${CH}\n}`,
+        },
+        {
+          id: uid(), name: 'Card Topup Transaction', method: 'POST',
+          url: '{{gateway}}/api/v2/transactions/card-topup',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: `{\n  "data": {\n    "debitAccount": "CARD-POOL-001",\n    "creditAccount": "WLT0000001",\n    "amount": 1000.00,\n    "presentment": false,\n    "transactionType": "CARD_TOPUP",\n    "currency": "KES",\n    "phoneNumber": "+254712345678"\n  },\n  ${CH}\n}`,
+        },
+        {
+          id: uid(), name: 'Initiate Card Topup', method: 'POST',
+          url: '{{gateway}}/api/v2/topup/card/initiate',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: `{\n  "data": {\n    "creditAccount": "WLT0000001",\n    "amount": 1000.00,\n    "currency": "KES",\n    "phoneNumber": "+254712345678",\n    "card": {\n      "pan": "4111111111111111",\n      "cvv": "123",\n      "expiry": "12/26"\n    }\n  },\n  ${CH}\n}`,
+        },
+        {
+          id: uid(), name: 'Card Topup Callback', method: 'POST',
+          url: '{{gateway}}/api/v2/topup/card/callback',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: `{\n  "data": {\n    "esbRef": "ESB-20240101-001",\n    "responseCode": "00",\n    "responseMessage": "Approved",\n    "receiptNumber": "RCP123456"\n  },\n  ${CH_API}\n}`,
+        },
+        {
+          id: uid(), name: 'Create Service Config', method: 'POST',
+          url: '{{gateway}}/api/v2/config/services',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: `{\n  "data": {\n    "serviceId": 1,\n    "externalServiceId": "EXT-001",\n    "channelId": 1,\n    "serviceCode": "FT",\n    "isExternal": false,\n    "accountId": 1001,\n    "senderNarration": "Transfer from {{account}}",\n    "receiverNarration": "Transfer to {{account}}",\n    "dailyLimit": 100000.00,\n    "weeklyLimit": 500000.00,\n    "monthlyLimit": 2000000.00,\n    "description": "Fund Transfer Service",\n    "createdBy": "admin"\n  },\n  ${CH_WEB}\n}`,
+        },
+        {
+          id: uid(), name: 'List Service Configs', method: 'GET',
+          url: '{{gateway}}/api/v2/config/services',
+          params:[], headers:[], bodyType:'none', bodyContent:'', authType:'bearer', authData:{token:'{{token}}'},
+        },
+        {
+          id: uid(), name: 'Get Service Config by ID', method: 'GET',
+          url: '{{gateway}}/api/v2/config/services/1',
+          params:[], headers:[], bodyType:'none', bodyContent:'', authType:'bearer', authData:{token:'{{token}}'},
+        },
+        {
+          id: uid(), name: 'Get Service Config by Code', method: 'GET',
+          url: '{{gateway}}/api/v2/config/services/by-code/FT',
+          params:[], headers:[], bodyType:'none', bodyContent:'', authType:'bearer', authData:{token:'{{token}}'},
+        },
+        {
+          id: uid(), name: 'Create Charge Config', method: 'POST',
+          url: '{{gateway}}/api/v2/config/charges',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: `{\n  "data": {\n    "serviceManagementId": 1,\n    "minAmount": 0.00,\n    "maxAmount": 10000.00,\n    "chargeValue": 30.00,\n    "valueType": "FLAT",\n    "chargeType": "SENDER",\n    "accountId": 2001,\n    "senderNarration": "Charge for transfer",\n    "receiverNarration": "Fee credit",\n    "createdBy": "admin"\n  },\n  ${CH_WEB}\n}`,
+        },
+        {
+          id: uid(), name: 'List Charges by Service', method: 'GET',
+          url: '{{gateway}}/api/v2/config/charges/service/1',
+          params:[], headers:[], bodyType:'none', bodyContent:'', authType:'bearer', authData:{token:'{{token}}'},
+        },
+        {
+          id: uid(), name: 'Get Charge by ID', method: 'GET',
+          url: '{{gateway}}/api/v2/config/charges/1',
+          params:[], headers:[], bodyType:'none', bodyContent:'', authType:'bearer', authData:{token:'{{token}}'},
+        },
+      ]
+    },
+
+    // ── 4. Payment Service ─────────────────────────────────────
+    {
+      id: uid(), name: '4. Payment Service  (8092)', open: false,
+      requests: [
+        // Card
+        {
+          id: uid(), name: 'Device Fingerprint', method: 'POST',
+          url: '{{gateway}}/api/v1/card/device-fingerprint',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: B({
+            tranid: "TRN-001", amount: "1000", currency: "KES", country: "KE",
+            firstname: "John", secondname: "Doe", phone: "+254712345678",
+            email: "john@example.com", cardNumber: "4111111111111111",
+            cardExpiryMonth: "12", cardExpiryYear: "2026", cardCvv: "123", cardType: "VISA"
+          }),
+        },
+        {
+          id: uid(), name: 'Process Card Payment', method: 'POST',
+          url: '{{gateway}}/api/v1/card/payment',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: B({
+            tranid: "TRN-001", amount: "1000", currency: "KES", referenceId: "REF-123456",
+            firstname: "John", phone: "+254712345678", email: "john@example.com",
+            cardNumber: "4111111111111111", cardExpiryMonth: "12", cardExpiryYear: "2026",
+            cardCvv: "123", cardType: "VISA", ipAddress: "192.168.1.1",
+            httpAcceptContent: "text/html,application/json", httpBrowserLanguage: "en-US",
+            httpBrowserJavaEnabled: "true", httpBrowserJavaScriptEnabled: "true",
+            httpBrowserColorDepth: "24", httpBrowserScreenHeight: "1080",
+            httpBrowserScreenWidth: "1920", httpBrowserTimeDifference: "-180",
+            userAgentBrowserValue: "Mozilla/5.0 (Linux; Android 14)"
+          }),
+        },
+        {
+          id: uid(), name: 'Card Callback (Public)', method: 'POST',
+          url: '{{gateway}}/api/v1/card/callback',
+          params:[], headers:[], bodyType:'json', authType:'none', authData:{},
+          bodyContent: B({ statuscode: "00", tranid: "TRN-001", status: "APPROVED" }),
+        },
+        // Billing — BPC Electricity
+        {
+          id: uid(), name: 'Confirm BPC Meter', method: 'POST',
+          url: '{{gateway}}/api/v1/billing/bpc/confirm-meter',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: B({ meterNumber: "123456789" }),
+        },
+        {
+          id: uid(), name: 'Vend Electricity Token', method: 'POST',
+          url: '{{gateway}}/api/v1/billing/vend',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: B({
+            serviceCode: "BPC_TRANSACTION", accountNo: "123456789",
+            amount: "1000", currency: "BWP", phoneNumber: "+26771234567",
+            transactionId: "TXN-20240101-001", email: "john@example.com"
+          }),
+        },
+        {
+          id: uid(), name: 'Billing Transaction Status', method: 'GET',
+          url: '{{gateway}}/api/v1/billing/transaction/TXN-20240101-001/status',
+          params:[], headers:[], bodyType:'none', bodyContent:'', authType:'bearer', authData:{token:'{{token}}'},
+        },
+        // Billing — Airtime Topup
+        {
+          id: uid(), name: 'Airtime Topup - Orange', method: 'POST',
+          url: '{{gateway}}/api/v1/billing/vend',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: B({
+            serviceCode: "AIRTIME_ORANGE", accountNo: "+26774000001",
+            amount: "50", currency: "BWP", phoneNumber: "+26774000001",
+            transactionId: "TXN-AIR-ORG-001", email: "john@example.com"
+          }),
+        },
+        {
+          id: uid(), name: 'Airtime Topup - BTC', method: 'POST',
+          url: '{{gateway}}/api/v1/billing/vend',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: B({
+            serviceCode: "AIRTIME_BTC", accountNo: "+26771000001",
+            amount: "50", currency: "BWP", phoneNumber: "+26771000001",
+            transactionId: "TXN-AIR-BTC-001", email: "john@example.com"
+          }),
+        },
+        {
+          id: uid(), name: 'Airtime Topup - Mascom', method: 'POST',
+          url: '{{gateway}}/api/v1/billing/vend',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: B({
+            serviceCode: "AIRTIME_MASCOM", accountNo: "+26775000001",
+            amount: "50", currency: "BWP", phoneNumber: "+26775000001",
+            transactionId: "TXN-AIR-MSC-001", email: "john@example.com"
+          }),
+        },
+        // Intercape Bus
+        {
+          id: uid(), name: 'List Bus Stops', method: 'GET',
+          url: '{{gateway}}/api/v1/intercape/bus-stops',
+          params:[], headers:[], bodyType:'none', bodyContent:'', authType:'bearer', authData:{token:'{{token}}'},
+        },
+        {
+          id: uid(), name: 'Search Trips', method: 'POST',
+          url: '{{gateway}}/api/v1/intercape/trips',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: B({ depPlace: "NBO", arrPlace: "MBA", transactionId: "TXN-SEARCH-001" }),
+        },
+        {
+          id: uid(), name: 'Create Booking', method: 'POST',
+          url: '{{gateway}}/api/v1/intercape/booking',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: B({
+            transactionId: "TXN-BOOK-001", tripId: 12345, coachSerial: 1,
+            depPlace: "NBO", arrPlace: "MBA", travelClass: "ECONOMY",
+            numTickets: 2, price: 4000
+          }),
+        },
+        {
+          id: uid(), name: 'Get Basket Total', method: 'POST',
+          url: '{{gateway}}/api/v1/intercape/booking/total',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: B({ basketId: 999, transactionId: "TXN-BOOK-001" }),
+        },
+        {
+          id: uid(), name: 'Mark Basket Paid', method: 'POST',
+          url: '{{gateway}}/api/v1/intercape/booking/paid',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: B({ basketId: 999, transactionId: "TXN-BOOK-001", amount: 3600 }),
+        },
+        {
+          id: uid(), name: 'Update Payment Status', method: 'POST',
+          url: '{{gateway}}/api/v1/intercape/payment-status',
+          params:[], headers:[], bodyType:'json', authType:'bearer', authData:{token:'{{token}}'},
+          bodyContent: B({ basketId: 999, transactionId: "TXN-BOOK-001", paymentStatus: "PAID" }),
+        },
+        // Third-party
+        {
+          id: uid(), name: 'Send SMS', method: 'GET',
+          url: '{{gateway}}/api/v1/third-party/send-sms/%2B254712345678/Your%20OTP%20is%20123456',
+          params:[], headers:[], bodyType:'none', bodyContent:'', authType:'bearer', authData:{token:'{{token}}'},
+        },
+      ]
+    },
+
+  ];
+
+  return { envId, environments, collections };
+}
+
+function resetToDefaults() {
+  if (!confirm('Reset all collections and environment to Marri Wallet defaults?\n\nYour saved requests and history will be cleared.')) return;
+  localStorage.removeItem('marri_api_version');
+  localStorage.removeItem('marri_api_state');
+  state.collections = [];
+  state.environments = [];
+  state.history = [];
+  state.activeEnv = null;
+  bootstrap();
+  showToast('Reset to defaults!', 'success');
+}
+
+function bootstrap() {
+  loadState();
+
+  const savedVersion = localStorage.getItem('marri_api_version');
+  const needsReset = savedVersion !== DATA_VERSION;
+
+  // Reset defaults if version changed or no data
+  if (!state.environments.length || needsReset) {
+    const defaults = makeDefaultState();
+    state.environments = defaults.environments;
+    state.activeEnv = defaults.envId;
+    localStorage.setItem('marri_api_version', DATA_VERSION);
+  }
+
+  if (!state.collections.length || needsReset) {
+    state.collections = makeDefaultState().collections;
+    localStorage.setItem('marri_api_version', DATA_VERSION);
+  }
+
+  syncEnvSelects();
+  renderCollections();
+  renderKvEditor('paramsEditor',  state.params);
+  renderKvEditor('headersEditor', state.headers);
+  switchAuthType(state.authType);
+  switchBodyType(state.bodyType);
+  updateTabCounts();
+
+  const dot = document.getElementById('envDot');
+  dot.style.background = state.activeEnv ? 'var(--success)' : 'var(--text-muted)';
+
+  saveState();
+}
+
+bootstrap();
+</script>
+</body>
+</html>

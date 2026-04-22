@@ -43,6 +43,7 @@ public class RouteLocatorConfig {
                 .route("payment-service", r -> r
                         .path("/api/v1/billing/**",
                               "/api/v1/intercape/**",
+                              "/api/v1/card/**",
                               "/api/v1/third-party/**")
                         .uri(paymentServiceUrl))
                 .build();
