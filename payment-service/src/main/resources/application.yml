@@ -20,6 +20,11 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8093}/.well-known/jwks.json
+  cloud:
+    consul:
+      discovery:
+        hostname: ${CONSUL_HOST:localhost}
+        port: 8500
 management:
   endpoints:
     web:
@@ -31,7 +36,6 @@ management:
   metrics:
     tags:
       application: payment-service
-
 sms:
   username: ${SMS_USERNAME}
   password: ${SMS_PASSWORD}

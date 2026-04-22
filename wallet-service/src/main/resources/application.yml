@@ -2,6 +2,8 @@ server:
   port: 8090
 
 spring:
+  application:
+    name: wallet-service
   security:
     oauth2:
       resourceserver:
@@ -23,6 +25,11 @@ spring:
       initial-size: 5
       max-idle-time: 30m
       max-acquire-time: 30s
+  cloud:
+    consul:
+      discovery:
+        hostname: ${CONSUL_HOST:localhost}
+        port: 8500
 
 management:
   endpoints:
