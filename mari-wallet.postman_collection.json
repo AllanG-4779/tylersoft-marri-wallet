@@ -2,15 +2,152 @@
   "info": {
     "name": "Mari Wallet API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Complete API collection for Mari Wallet — Payment, Wallet, and User Management services."
+    "description": "Complete API collection for Mari Wallet — Auth, User Management, Wallet, and Payment services. Channel values: WEB | MOBILE | INTEGRATOR."
   },
   "variable": [
-    { "key": "walletBaseUrl", "value": "http://localhost:8082", "type": "string" },
-    { "key": "userBaseUrl", "value": "http://localhost:8083", "type": "string" },
+    { "key": "authBaseUrl",    "value": "http://localhost:8093", "type": "string" },
+    { "key": "userBaseUrl",    "value": "http://localhost:8083", "type": "string" },
+    { "key": "walletBaseUrl",  "value": "http://localhost:8082", "type": "string" },
     { "key": "paymentBaseUrl", "value": "http://localhost:8081", "type": "string" },
-    { "key": "customerId", "value": "", "type": "string" }
+    { "key": "customerId",     "value": "00000000-0000-0000-0000-000000000001", "type": "string" },
+    { "key": "token",          "value": "", "type": "string" }
   ],
   "item": [
+
+    {
+      "name": "Auth Service",
+      "item": [
+        {
+          "name": "Customer Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{authBaseUrl}}/api/v1/auth/login",
+              "host": ["{{authBaseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\n    \"phoneNumber\": \"+254712345678\",\n    \"pin\": \"1234\"\n  },\n  \"channelDetails\": {\n    \"deviceId\": \"device-uuid-001\",\n    \"name\": \"Samsung Galaxy S23\",\n    \"osVersion\": \"Android 14\",\n    \"appVersion\": \"1.4.2\",\n    \"channel\": \"MOBILE\",\n    \"ipAddress\": \"192.168.1.100\",\n    \"os\": \"Android\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJSUzI1NiJ9...\",\n    \"tokenType\": \"Bearer\",\n    \"expiresIn\": 3600\n  }\n}"
+            },
+            {
+              "name": "401 Unauthorized — Invalid credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"01\",\n  \"error\": \"Invalid phone number or PIN\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Integrator Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{authBaseUrl}}/api/v1/auth/integrator/login",
+              "host": ["{{authBaseUrl}}"],
+              "path": ["api", "v1", "auth", "integrator", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\n    \"accessKey\": \"INT-ACCESS-KEY-001\",\n    \"accessSecret\": \"INT-SECRET-001\"\n  },\n  \"channelDetails\": {\n    \"deviceId\": \"integrator-server-001\",\n    \"name\": \"Partner API Server\",\n    \"osVersion\": \"Ubuntu 22.04\",\n    \"appVersion\": \"1.0.0\",\n    \"channel\": \"INTEGRATOR\",\n    \"ipAddress\": \"10.0.0.50\",\n    \"os\": \"Linux\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJSUzI1NiJ9...\",\n    \"tokenType\": \"Bearer\",\n    \"expiresIn\": 3600\n  }\n}"
+            },
+            {
+              "name": "401 Unauthorized — Invalid credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"01\",\n  \"error\": \"Invalid access key or secret\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{authBaseUrl}}/api/v1/auth/admin/login",
+              "host": ["{{authBaseUrl}}"],
+              "path": ["api", "v1", "auth", "admin", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\n    \"username\": \"sysadmin\",\n    \"password\": \"P@ssw0rd!\"\n  },\n  \"channelDetails\": {\n    \"deviceId\": \"admin-browser-001\",\n    \"name\": \"Chrome on Windows\",\n    \"osVersion\": \"Windows 11\",\n    \"appVersion\": \"1.0.0\",\n    \"channel\": \"WEB\",\n    \"ipAddress\": \"192.168.1.5\",\n    \"os\": \"Windows\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJSUzI1NiJ9...\",\n    \"tokenType\": \"Bearer\",\n    \"expiresIn\": 3600\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Integrator",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{authBaseUrl}}/api/v1/auth/integrator",
+              "host": ["{{authBaseUrl}}"],
+              "path": ["api", "v1", "auth", "integrator"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\n    \"name\": \"ACME Bank Partner\",\n    \"description\": \"Integration partner for ACME Bank mobile banking\"\n  },\n  \"channelDetails\": {\n    \"deviceId\": \"admin-browser-001\",\n    \"name\": \"Chrome on Windows\",\n    \"osVersion\": \"Windows 11\",\n    \"appVersion\": \"1.0.0\",\n    \"channel\": \"WEB\",\n    \"ipAddress\": \"192.168.1.5\",\n    \"os\": \"Windows\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"id\": \"int-uuid-001\",\n    \"name\": \"ACME Bank Partner\",\n    \"accessKey\": \"INT-ACCESS-KEY-001\",\n    \"accessSecret\": \"INT-SECRET-001\"\n  }\n}"
+            },
+            {
+              "name": "403 Forbidden — Insufficient role",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"01\",\n  \"error\": \"Access Denied\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+
     {
       "name": "User Management",
       "item": [
@@ -29,15 +166,31 @@
               "formdata": [
                 {
                   "key": "data",
-                  "value": "{\"firstName\":\"John\",\"lastName\":\"Doe\",\"phoneNumber\":\"+254712345678\",\"email\":\"john.doe@example.com\",\"idType\":\"NATIONAL_ID\",\"idNumber\":\"12345678\"}",
+                  "value": "{\"firstName\":\"John\",\"lastName\":\"Doe\",\"phoneNumber\":\"254712345678\",\"email\":\"john.doe@example.com\",\"idType\":\"NATIONAL_ID\",\"idNumber\":\"12345678\",\"deviceId\":\"device-uuid-001\",\"deviceType\":\"ANDROID\",\"channel\":\"MOBILE\",\"deviceModel\":\"Samsung Galaxy S23\",\"appVersion\":\"1.4.2\"}",
                   "type": "text",
                   "contentType": "application/json"
                 },
                 { "key": "id_front", "type": "file", "src": [] },
-                { "key": "id_back", "type": "file", "src": [], "disabled": true }
+                { "key": "id_back",  "type": "file", "src": [], "disabled": true }
               ]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "201 Created — Success",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"message\": \"Registration successful. OTP sent to +254712345678\",\n  \"data\": {\n    \"id\": \"00000000-0000-0000-0000-000000000001\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"phoneNumber\": \"+254712345678\",\n    \"email\": \"john.doe@example.com\",\n    \"status\": \"PENDING_VERIFICATION\",\n    \"createdAt\": \"2026-04-22T10:00:00Z\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request — Validation error",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"01\",\n  \"error\": \"phoneNumber: Phone number must be a valid international format, e.g. 254712345678\"\n}"
+            }
+          ]
         },
         {
           "name": "Verify OTP",
@@ -51,10 +204,26 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"phoneNumber\": \"+254712345678\",\n  \"otp\": \"123456\",\n  \"purpose\": \"REGISTRATION\"\n}",
+              "raw": "{\n  \"data\": {\n    \"phoneNumber\": \"+254712345678\",\n    \"otp\": \"123456\",\n    \"purpose\": \"REGISTRATION\"\n  },\n  \"channelDetails\": {\n    \"deviceId\": \"device-uuid-001\",\n    \"name\": \"Samsung Galaxy S23\",\n    \"osVersion\": \"Android 14\",\n    \"appVersion\": \"1.4.2\",\n    \"channel\": \"MOBILE\",\n    \"ipAddress\": \"192.168.1.100\",\n    \"os\": \"Android\"\n  }\n}",
               "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"message\": \"Phone number verified successfully\",\n  \"data\": {\n    \"id\": \"00000000-0000-0000-0000-000000000001\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"phoneNumber\": \"+254712345678\",\n    \"email\": \"john.doe@example.com\",\n    \"status\": \"VERIFIED\",\n    \"createdAt\": \"2026-04-22T10:00:00Z\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request — Invalid OTP",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"01\",\n  \"error\": \"OTP is invalid or has expired\"\n}"
+            }
+          ]
         },
         {
           "name": "Resend OTP",
@@ -68,83 +237,191 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"phoneNumber\": \"+254712345678\",\n  \"purpose\": \"REGISTRATION\"\n}",
+              "raw": "{\n  \"data\": {\n    \"phoneNumber\": \"+254712345678\",\n    \"purpose\": \"REGISTRATION\"\n  },\n  \"channelDetails\": {\n    \"deviceId\": \"device-uuid-001\",\n    \"name\": \"Samsung Galaxy S23\",\n    \"osVersion\": \"Android 14\",\n    \"appVersion\": \"1.4.2\",\n    \"channel\": \"MOBILE\",\n    \"ipAddress\": \"192.168.1.100\",\n    \"os\": \"Android\"\n  }\n}",
               "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"message\": \"OTP resent successfully\"\n}"
+            }
+          ]
         },
         {
           "name": "Set PIN",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "url": {
-              "raw": "{{userBaseUrl}}/api/v2/users/{{customerId}}/set-pin",
+              "raw": "{{userBaseUrl}}/api/v2/users/set-pin",
               "host": ["{{userBaseUrl}}"],
-              "path": ["api", "v2", "users", "{{customerId}}", "set-pin"]
+              "path": ["api", "v2", "users", "set-pin"]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"pin\": \"1234\"\n}",
+              "raw": "{\n  \"data\": {\n    \"customerId\": \"{{customerId}}\",\n    \"pin\": \"1234\"\n  },\n  \"channelDetails\": {\n    \"deviceId\": \"device-uuid-001\",\n    \"name\": \"Samsung Galaxy S23\",\n    \"osVersion\": \"Android 14\",\n    \"appVersion\": \"1.4.2\",\n    \"channel\": \"MOBILE\",\n    \"ipAddress\": \"192.168.1.100\",\n    \"os\": \"Android\"\n  }\n}",
               "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"message\": \"PIN set successfully\",\n  \"data\": {\n    \"id\": \"00000000-0000-0000-0000-000000000001\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"phoneNumber\": \"+254712345678\",\n    \"email\": \"john.doe@example.com\",\n    \"status\": \"ACTIVE\",\n    \"createdAt\": \"2026-04-22T10:00:00Z\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Get Customer",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": {
               "raw": "{{userBaseUrl}}/api/v2/users/{{customerId}}",
               "host": ["{{userBaseUrl}}"],
               "path": ["api", "v2", "users", "{{customerId}}"]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"id\": \"00000000-0000-0000-0000-000000000001\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"phoneNumber\": \"+254712345678\",\n    \"email\": \"john.doe@example.com\",\n    \"status\": \"ACTIVE\",\n    \"createdAt\": \"2026-04-22T10:00:00Z\"\n  }\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"01\",\n  \"error\": \"Customer not found\"\n}"
+            }
+          ]
         },
         {
-          "name": "Upload KYC Documents",
+          "name": "Lookup Customer by Phone",
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "url": {
-              "raw": "{{userBaseUrl}}/api/v2/users/{{customerId}}/kyc/documents",
+              "raw": "{{userBaseUrl}}/api/v2/users/lookup",
               "host": ["{{userBaseUrl}}"],
-              "path": ["api", "v2", "users", "{{customerId}}", "kyc", "documents"]
+              "path": ["api", "v2", "users", "lookup"]
             },
             "body": {
-              "mode": "formdata",
-              "formdata": [
-                { "key": "idType", "value": "NATIONAL_ID", "type": "text" },
-                { "key": "idNumber", "value": "12345678", "type": "text" },
-                { "key": "frontImage", "type": "file", "src": [] },
-                { "key": "backImage", "type": "file", "src": [], "disabled": true }
-              ]
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+254712345678\"\n}",
+              "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"id\": \"00000000-0000-0000-0000-000000000001\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"phoneNumber\": \"+254712345678\",\n    \"email\": \"john.doe@example.com\",\n    \"status\": \"ACTIVE\",\n    \"createdAt\": \"2026-04-22T10:00:00Z\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Get KYC Documents",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": {
               "raw": "{{userBaseUrl}}/api/v2/users/{{customerId}}/kyc/documents",
               "host": ["{{userBaseUrl}}"],
               "path": ["api", "v2", "users", "{{customerId}}", "kyc", "documents"]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": [\n    {\n      \"id\": \"doc-uuid-001\",\n      \"idType\": \"NATIONAL_ID\",\n      \"idNumber\": \"12345678\",\n      \"frontImageUrl\": \"/uploads/front_12345678.jpg\",\n      \"backImageUrl\": \"/uploads/back_12345678.jpg\",\n      \"status\": \"APPROVED\",\n      \"uploadedAt\": \"2026-04-22T10:00:00Z\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "List Devices",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{userBaseUrl}}/api/v2/users/{{customerId}}/devices",
+              "host": ["{{userBaseUrl}}"],
+              "path": ["api", "v2", "users", "{{customerId}}", "devices"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": [\n    {\n      \"id\": \"device-uuid-001\",\n      \"deviceType\": \"ANDROID\",\n      \"deviceModel\": \"Samsung Galaxy S23\",\n      \"appVersion\": \"1.4.2\",\n      \"status\": \"ACTIVE\",\n      \"registeredAt\": \"2026-04-22T10:00:00Z\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Device Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{userBaseUrl}}/api/v2/users/{{customerId}}/devices/device-uuid-001/status",
+              "host": ["{{userBaseUrl}}"],
+              "path": ["api", "v2", "users", "{{customerId}}", "devices", "device-uuid-001", "status"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"BLOCKED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"id\": \"device-uuid-001\",\n    \"deviceType\": \"ANDROID\",\n    \"deviceModel\": \"Samsung Galaxy S23\",\n    \"status\": \"BLOCKED\"\n  }\n}"
+            }
+          ]
         }
       ]
     },
+
     {
-      "name": "Wallet - Accounts",
+      "name": "Wallet — Accounts",
       "item": [
         {
           "name": "Open Account",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "url": {
               "raw": "{{walletBaseUrl}}/api/v2/accounts",
               "host": ["{{walletBaseUrl}}"],
@@ -152,21 +429,41 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"data\": {\n    \"currency\": \"KES\",\n    \"accountPrefix\": \"WLT\",\n    \"phoneNumber\": \"+254712345678\",\n    \"accountName\": \"John Doe\",\n    \"openingBalance\": 0.00\n  },\n  \"channelDetails\": {\n    \"channelName\": \"MOBILE\",\n    \"clientId\": \"client-001\",\n    \"hostName\": \"app-host\",\n    \"hostIp\": \"192.168.1.1\"\n  }\n}",
+              "raw": "{\n  \"data\": {\n    \"currency\": \"KES\",\n    \"accountPrefix\": \"WLT\",\n    \"phoneNumber\": \"+254712345678\",\n    \"accountName\": \"John Doe\",\n    \"openingBalance\": 0.00\n  },\n  \"channelDetails\": {\n    \"deviceId\": \"device-uuid-001\",\n    \"name\": \"Samsung Galaxy S23\",\n    \"osVersion\": \"Android 14\",\n    \"appVersion\": \"1.4.2\",\n    \"channel\": \"MOBILE\",\n    \"ipAddress\": \"192.168.1.100\",\n    \"os\": \"Android\"\n  }\n}",
               "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"accountNumber\": \"WLT0000001\",\n    \"accountName\": \"John Doe\",\n    \"currency\": \"KES\",\n    \"balance\": 0.00,\n    \"status\": \"ACTIVE\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request — Account already exists",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"01\",\n  \"error\": \"An account already exists for this phone number\"\n}"
+            }
+          ]
         }
       ]
     },
+
     {
-      "name": "Wallet - Transactions",
+      "name": "Wallet — Transactions",
       "item": [
         {
           "name": "Fund Transfer (FT)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "url": {
               "raw": "{{walletBaseUrl}}/api/v2/transactions/ft",
               "host": ["{{walletBaseUrl}}"],
@@ -174,16 +471,35 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"data\": {\n    \"debitAccount\": \"WLT0000001\",\n    \"creditAccount\": \"WLT0000002\",\n    \"amount\": 500.00,\n    \"presentment\": false,\n    \"transactionType\": \"FT\",\n    \"currency\": \"KES\",\n    \"phoneNumber\": \"+254712345678\"\n  },\n  \"channelDetails\": {\n    \"channelName\": \"MOBILE\",\n    \"clientId\": \"client-001\",\n    \"hostName\": \"app-host\",\n    \"hostIp\": \"192.168.1.1\"\n  }\n}",
+              "raw": "{\n  \"data\": {\n    \"debitAccount\": \"WLT0000001\",\n    \"creditAccount\": \"WLT0000002\",\n    \"amount\": 500.00,\n    \"presentment\": false,\n    \"transactionType\": \"FT\",\n    \"currency\": \"KES\",\n    \"phoneNumber\": \"+254712345678\"\n  },\n  \"channelDetails\": {\n    \"deviceId\": \"device-uuid-001\",\n    \"name\": \"Samsung Galaxy S23\",\n    \"osVersion\": \"Android 14\",\n    \"appVersion\": \"1.4.2\",\n    \"channel\": \"MOBILE\",\n    \"ipAddress\": \"192.168.1.100\",\n    \"os\": \"Android\"\n  }\n}",
               "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"transactionRef\": \"TXN-20260422-001\",\n    \"responseCode\": \"00\",\n    \"responseMessage\": \"Transaction successful\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request — Insufficient funds",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"01\",\n  \"error\": \"51 - Insufficient funds\"\n}"
+            }
+          ]
         },
         {
           "name": "Card Topup Transaction",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "url": {
               "raw": "{{walletBaseUrl}}/api/v2/transactions/card-topup",
               "host": ["{{walletBaseUrl}}"],
@@ -191,21 +507,34 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"data\": {\n    \"debitAccount\": \"CARD_ACCOUNT\",\n    \"creditAccount\": \"WLT0000001\",\n    \"amount\": 1000.00,\n    \"presentment\": false,\n    \"transactionType\": \"CARD_TOPUP\",\n    \"currency\": \"KES\",\n    \"phoneNumber\": \"+254712345678\"\n  },\n  \"channelDetails\": {\n    \"channelName\": \"MOBILE\",\n    \"clientId\": \"client-001\",\n    \"hostName\": \"app-host\",\n    \"hostIp\": \"192.168.1.1\"\n  }\n}",
+              "raw": "{\n  \"data\": {\n    \"debitAccount\": \"CARD_ACCOUNT\",\n    \"creditAccount\": \"WLT0000001\",\n    \"amount\": 1000.00,\n    \"presentment\": false,\n    \"transactionType\": \"CARD_TOPUP\",\n    \"currency\": \"KES\",\n    \"phoneNumber\": \"+254712345678\"\n  },\n  \"channelDetails\": {\n    \"deviceId\": \"device-uuid-001\",\n    \"name\": \"Samsung Galaxy S23\",\n    \"osVersion\": \"Android 14\",\n    \"appVersion\": \"1.4.2\",\n    \"channel\": \"MOBILE\",\n    \"ipAddress\": \"192.168.1.100\",\n    \"os\": \"Android\"\n  }\n}",
               "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"transactionRef\": \"TXN-20260422-002\",\n    \"responseCode\": \"00\",\n    \"responseMessage\": \"Card topup successful\"\n  }\n}"
+            }
+          ]
         }
       ]
     },
+
     {
-      "name": "Wallet - Card Topup",
+      "name": "Wallet — Card Topup",
       "item": [
         {
           "name": "Initiate Card Topup",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "url": {
               "raw": "{{walletBaseUrl}}/api/v2/topup/card/initiate",
               "host": ["{{walletBaseUrl}}"],
@@ -213,10 +542,26 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"data\": {\n    \"creditAccount\": \"WLT0000001\",\n    \"amount\": 1000.00,\n    \"currency\": \"KES\",\n    \"phoneNumber\": \"+254712345678\",\n    \"card\": {\n      \"pan\": \"4111111111111111\",\n      \"cvv\": \"123\",\n      \"expiry\": \"12/26\"\n    }\n  },\n  \"channelDetails\": {\n    \"channelName\": \"MOBILE\",\n    \"clientId\": \"client-001\",\n    \"hostName\": \"app-host\",\n    \"hostIp\": \"192.168.1.1\"\n  }\n}",
+              "raw": "{\n  \"data\": {\n    \"creditAccount\": \"WLT0000001\",\n    \"amount\": 1000.00,\n    \"currency\": \"KES\",\n    \"phoneNumber\": \"+254712345678\",\n    \"card\": {\n      \"pan\": \"4111111111111111\",\n      \"cvv\": \"123\",\n      \"expiry\": \"12/26\"\n    }\n  },\n  \"channelDetails\": {\n    \"deviceId\": \"device-uuid-001\",\n    \"name\": \"Samsung Galaxy S23\",\n    \"osVersion\": \"Android 14\",\n    \"appVersion\": \"1.4.2\",\n    \"channel\": \"MOBILE\",\n    \"ipAddress\": \"192.168.1.100\",\n    \"os\": \"Android\"\n  }\n}",
               "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"esbRef\": \"ESB-20260422-001\",\n    \"redirectUrl\": \"https://3ds.example.com/auth?ref=ESB-20260422-001\",\n    \"status\": \"PENDING_3DS\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request — Invalid card",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"01\",\n  \"error\": \"Card details are invalid or expired\"\n}"
+            }
+          ]
         },
         {
           "name": "Card Topup Callback",
@@ -230,21 +575,34 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"data\": {\n    \"esbRef\": \"ESB-20240101-001\",\n    \"responseCode\": \"00\",\n    \"responseMessage\": \"Approved\",\n    \"receiptNumber\": \"RCP123456\"\n  },\n  \"channelDetails\": {\n    \"channelName\": \"MOBILE\",\n    \"clientId\": \"client-001\",\n    \"hostName\": \"app-host\",\n    \"hostIp\": \"192.168.1.1\"\n  }\n}",
+              "raw": "{\n  \"data\": {\n    \"esbRef\": \"ESB-20260422-001\",\n    \"responseCode\": \"00\",\n    \"responseMessage\": \"Approved\",\n    \"receiptNumber\": \"RCP123456\"\n  },\n  \"channelDetails\": {\n    \"deviceId\": \"integrator-server-001\",\n    \"name\": \"ESB Gateway\",\n    \"osVersion\": \"Ubuntu 22.04\",\n    \"appVersion\": \"1.0.0\",\n    \"channel\": \"INTEGRATOR\",\n    \"ipAddress\": \"10.0.0.50\",\n    \"os\": \"Linux\"\n  }\n}",
               "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\"\n}"
+            }
+          ]
         }
       ]
     },
+
     {
-      "name": "Wallet - Config",
+      "name": "Wallet — Config",
       "item": [
         {
           "name": "Create Service Config",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "url": {
               "raw": "{{walletBaseUrl}}/api/v2/config/services",
               "host": ["{{walletBaseUrl}}"],
@@ -252,52 +610,98 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"data\": {\n    \"serviceId\": 1,\n    \"externalServiceId\": \"EXT-001\",\n    \"channelId\": 1,\n    \"serviceCode\": \"FT\",\n    \"isExternal\": false,\n    \"accountId\": 1001,\n    \"senderNarration\": \"Transfer from {{account}}\",\n    \"receiverNarration\": \"Transfer to {{account}}\",\n    \"dailyLimit\": 100000.00,\n    \"weeklyLimit\": 500000.00,\n    \"monthlyLimit\": 2000000.00,\n    \"description\": \"Fund Transfer Service\",\n    \"createdBy\": \"admin\"\n  },\n  \"channelDetails\": {\n    \"channelName\": \"ADMIN\",\n    \"clientId\": \"admin-001\",\n    \"hostName\": \"admin-host\",\n    \"hostIp\": \"192.168.1.1\"\n  }\n}",
+              "raw": "{\n  \"data\": {\n    \"serviceId\": 1,\n    \"externalServiceId\": \"EXT-001\",\n    \"channelId\": 1,\n    \"serviceCode\": \"FT\",\n    \"isExternal\": false,\n    \"accountId\": 1001,\n    \"senderNarration\": \"Transfer from {{account}}\",\n    \"receiverNarration\": \"Transfer to {{account}}\",\n    \"dailyLimit\": 100000.00,\n    \"weeklyLimit\": 500000.00,\n    \"monthlyLimit\": 2000000.00,\n    \"description\": \"Fund Transfer Service\",\n    \"createdBy\": \"admin\"\n  },\n  \"channelDetails\": {\n    \"deviceId\": \"admin-browser-001\",\n    \"name\": \"Chrome on Windows\",\n    \"osVersion\": \"Windows 11\",\n    \"appVersion\": \"1.0.0\",\n    \"channel\": \"WEB\",\n    \"ipAddress\": \"192.168.1.5\",\n    \"os\": \"Windows\"\n  }\n}",
               "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"id\": 1,\n    \"serviceCode\": \"FT\",\n    \"description\": \"Fund Transfer Service\",\n    \"dailyLimit\": 100000.00,\n    \"weeklyLimit\": 500000.00,\n    \"monthlyLimit\": 2000000.00,\n    \"isExternal\": false\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Get All Service Configs",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": {
               "raw": "{{walletBaseUrl}}/api/v2/config/services",
               "host": ["{{walletBaseUrl}}"],
               "path": ["api", "v2", "config", "services"]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"serviceCode\": \"FT\",\n      \"description\": \"Fund Transfer Service\",\n      \"dailyLimit\": 100000.00\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Get Service Config by ID",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": {
               "raw": "{{walletBaseUrl}}/api/v2/config/services/1",
               "host": ["{{walletBaseUrl}}"],
               "path": ["api", "v2", "config", "services", "1"]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"id\": 1,\n    \"serviceCode\": \"FT\",\n    \"description\": \"Fund Transfer Service\",\n    \"dailyLimit\": 100000.00\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request — Not Found",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"01\",\n  \"error\": \"Service config not found for id: 1\"\n}"
+            }
+          ]
         },
         {
           "name": "Get Service Config by Code",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": {
               "raw": "{{walletBaseUrl}}/api/v2/config/services/by-code/FT",
               "host": ["{{walletBaseUrl}}"],
               "path": ["api", "v2", "config", "services", "by-code", "FT"]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"id\": 1,\n    \"serviceCode\": \"FT\",\n    \"description\": \"Fund Transfer Service\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Create Charge Config",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "url": {
               "raw": "{{walletBaseUrl}}/api/v2/config/charges",
               "host": ["{{walletBaseUrl}}"],
@@ -305,53 +709,485 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"data\": {\n    \"serviceManagementId\": 1,\n    \"minAmount\": 0.00,\n    \"maxAmount\": 10000.00,\n    \"chargeValue\": 30.00,\n    \"valueType\": \"FLAT\",\n    \"chargeType\": \"SENDER\",\n    \"accountId\": 2001,\n    \"senderNarration\": \"Charge for FT\",\n    \"receiverNarration\": \"Charge credit\",\n    \"createdBy\": \"admin\"\n  },\n  \"channelDetails\": {\n    \"channelName\": \"ADMIN\",\n    \"clientId\": \"admin-001\",\n    \"hostName\": \"admin-host\",\n    \"hostIp\": \"192.168.1.1\"\n  }\n}",
+              "raw": "{\n  \"data\": {\n    \"serviceManagementId\": 1,\n    \"minAmount\": 0.00,\n    \"maxAmount\": 10000.00,\n    \"chargeValue\": 30.00,\n    \"valueType\": \"FLAT\",\n    \"chargeType\": \"SENDER\",\n    \"accountId\": 2001,\n    \"senderNarration\": \"Charge for FT\",\n    \"receiverNarration\": \"Charge credit\",\n    \"createdBy\": \"admin\"\n  },\n  \"channelDetails\": {\n    \"deviceId\": \"admin-browser-001\",\n    \"name\": \"Chrome on Windows\",\n    \"osVersion\": \"Windows 11\",\n    \"appVersion\": \"1.0.0\",\n    \"channel\": \"WEB\",\n    \"ipAddress\": \"192.168.1.5\",\n    \"os\": \"Windows\"\n  }\n}",
               "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"id\": 1,\n    \"serviceManagementId\": 1,\n    \"minAmount\": 0.00,\n    \"maxAmount\": 10000.00,\n    \"chargeValue\": 30.00,\n    \"valueType\": \"FLAT\",\n    \"chargeType\": \"SENDER\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Get Charges by Service",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": {
               "raw": "{{walletBaseUrl}}/api/v2/config/charges/service/1",
               "host": ["{{walletBaseUrl}}"],
               "path": ["api", "v2", "config", "charges", "service", "1"]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"serviceManagementId\": 1,\n      \"minAmount\": 0.00,\n      \"maxAmount\": 10000.00,\n      \"chargeValue\": 30.00,\n      \"valueType\": \"FLAT\",\n      \"chargeType\": \"SENDER\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Get Charge by ID",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": {
               "raw": "{{walletBaseUrl}}/api/v2/config/charges/1",
               "host": ["{{walletBaseUrl}}"],
               "path": ["api", "v2", "config", "charges", "1"]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"id\": 1,\n    \"serviceManagementId\": 1,\n    \"chargeValue\": 30.00,\n    \"valueType\": \"FLAT\"\n  }\n}"
+            }
+          ]
         }
       ]
     },
+
     {
-      "name": "Payment - Third Party",
+      "name": "Payment — Billing",
+      "item": [
+        {
+          "name": "Confirm BPC Meter",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{paymentBaseUrl}}/api/v1/billing/bpc/confirm-meter",
+              "host": ["{{paymentBaseUrl}}"],
+              "path": ["api", "v1", "billing", "bpc", "confirm-meter"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meterNumber\": \"12345678\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"meterNumber\": \"12345678\",\n  \"customerName\": \"John Doe\",\n  \"address\": \"123 Main Street\",\n  \"status\": \"ACTIVE\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Vend (Buy Utility Token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{paymentBaseUrl}}/api/v1/billing/vend",
+              "host": ["{{paymentBaseUrl}}"],
+              "path": ["api", "v1", "billing", "vend"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceCode\": \"ELECTRICITY\",\n  \"accountNo\": \"12345678\",\n  \"amount\": \"500.00\",\n  \"currency\": \"KES\",\n  \"phoneNumber\": \"+254712345678\",\n  \"transactionId\": \"TXN-20260422-003\",\n  \"email\": \"john.doe@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"transactionId\": \"TXN-20260422-003\",\n  \"token\": \"1234-5678-9012-3456-7890\",\n  \"units\": \"25.5\",\n  \"status\": \"SUCCESS\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Billing Callback",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{paymentBaseUrl}}/api/v1/billing/callback/TXN-20260422-003",
+              "host": ["{{paymentBaseUrl}}"],
+              "path": ["api", "v1", "billing", "callback", "TXN-20260422-003"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"referenceId\": \"TXN-20260422-003\",\n  \"status\": \"SUCCESS\",\n  \"responseCode\": \"00\",\n  \"responseMessage\": \"Transaction completed successfully\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Get Billing Transaction Status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{paymentBaseUrl}}/api/v1/billing/transaction/TXN-20260422-003/status",
+              "host": ["{{paymentBaseUrl}}"],
+              "path": ["api", "v1", "billing", "transaction", "TXN-20260422-003", "status"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": \"SUCCESS\"\n}"
+            },
+            {
+              "name": "200 OK — Not Found",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"01\",\n  \"error\": \"No transaction found for reference: TXN-20260422-003\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "Payment — Card",
+      "item": [
+        {
+          "name": "Card Device Fingerprint",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{paymentBaseUrl}}/api/v1/card/device-fingerprint",
+              "host": ["{{paymentBaseUrl}}"],
+              "path": ["api", "v1", "card", "device-fingerprint"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tranid\": \"TXN-20260422-004\",\n  \"amount\": \"1000.00\",\n  \"currency\": \"KES\",\n  \"country\": \"KE\",\n  \"firstname\": \"John\",\n  \"secondname\": \"Doe\",\n  \"phone\": \"+254712345678\",\n  \"email\": \"john.doe@example.com\",\n  \"cardNumber\": \"4111111111111111\",\n  \"cardExpiryMonth\": \"12\",\n  \"cardExpiryYear\": \"2026\",\n  \"cardCvv\": \"123\",\n  \"cardType\": \"VISA\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"tranid\": \"TXN-20260422-004\",\n    \"deviceDataCollectionUrl\": \"https://3ds.example.com/ddc\",\n    \"jwt\": \"eyJhbGciOiJIUzI1NiJ9...\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Card Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{paymentBaseUrl}}/api/v1/card/payment",
+              "host": ["{{paymentBaseUrl}}"],
+              "path": ["api", "v1", "card", "payment"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tranid\": \"TXN-20260422-004\",\n  \"amount\": \"1000.00\",\n  \"currency\": \"KES\",\n  \"country\": \"KE\",\n  \"referenceId\": \"REF-20260422-001\",\n  \"firstname\": \"John\",\n  \"secondname\": \"Doe\",\n  \"phone\": \"+254712345678\",\n  \"email\": \"john.doe@example.com\",\n  \"cardNumber\": \"4111111111111111\",\n  \"cardExpiryMonth\": \"12\",\n  \"cardExpiryYear\": \"2026\",\n  \"cardCvv\": \"123\",\n  \"cardType\": \"VISA\",\n  \"ipAddress\": \"192.168.1.100\",\n  \"httpAcceptContent\": \"text/html,application/xhtml+xml\",\n  \"httpBrowserLanguage\": \"en-US\",\n  \"httpBrowserJavaEnabled\": \"false\",\n  \"httpBrowserJavaScriptEnabled\": \"true\",\n  \"httpBrowserColorDepth\": \"24\",\n  \"httpBrowserScreenHeight\": \"900\",\n  \"httpBrowserScreenWidth\": \"1440\",\n  \"httpBrowserTimeDifference\": \"-180\",\n  \"userAgentBrowserValue\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64)\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"tranid\": \"TXN-20260422-004\",\n    \"responseCode\": \"00\",\n    \"responseMessage\": \"Approved\",\n    \"receiptNumber\": \"RCP987654\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request — Declined",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"01\",\n  \"error\": \"05 - Do not honour\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Card Payment Callback",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{paymentBaseUrl}}/api/v1/card/callback",
+              "host": ["{{paymentBaseUrl}}"],
+              "path": ["api", "v1", "card", "callback"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tranid\": \"TXN-20260422-004\",\n  \"responseCode\": \"00\",\n  \"responseMessage\": \"Approved\",\n  \"receiptNumber\": \"RCP987654\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"statuscode\": \"00\",\n  \"tranid\": \"TXN-20260422-004\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "Payment — Intercape",
+      "item": [
+        {
+          "name": "Get Bus Stops",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{paymentBaseUrl}}/api/v1/intercape/bus-stops",
+              "host": ["{{paymentBaseUrl}}"],
+              "path": ["api", "v1", "intercape", "bus-stops"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": [\n    { \"id\": \"NBI\", \"name\": \"Nairobi\" },\n    { \"id\": \"MSA\", \"name\": \"Mombasa\" },\n    { \"id\": \"KSM\", \"name\": \"Kisumu\" }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Search Trips",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{paymentBaseUrl}}/api/v1/intercape/trips",
+              "host": ["{{paymentBaseUrl}}"],
+              "path": ["api", "v1", "intercape", "trips"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"depPlace\": \"NBI\",\n  \"arrPlace\": \"MSA\",\n  \"transactionId\": \"TXN-20260422-005\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": [\n    {\n      \"tripId\": \"TRIP-001\",\n      \"departureTime\": \"2026-04-23T08:00:00\",\n      \"arrivalTime\": \"2026-04-23T16:00:00\",\n      \"availableSeats\": 20,\n      \"price\": 1500\n    }\n  ]\n}"
+            },
+            {
+              "name": "400 Bad Request — No trips",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"01\",\n  \"error\": \"No trips available for the selected route\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{paymentBaseUrl}}/api/v1/intercape/booking",
+              "host": ["{{paymentBaseUrl}}"],
+              "path": ["api", "v1", "intercape", "booking"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"TXN-20260422-005\",\n  \"tripId\": \"TRIP-001\",\n  \"coachSerial\": 1001,\n  \"depPlace\": \"NBI\",\n  \"arrPlace\": \"MSA\",\n  \"travelClass\": \"ECONOMY\",\n  \"numTickets\": 1,\n  \"price\": 1500\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"basketId\": 5001,\n    \"transactionId\": \"TXN-20260422-005\",\n    \"status\": \"RESERVED\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Booking Total",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{paymentBaseUrl}}/api/v1/intercape/booking/total",
+              "host": ["{{paymentBaseUrl}}"],
+              "path": ["api", "v1", "intercape", "booking", "total"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"TXN-20260422-005\",\n  \"basketId\": 5001,\n  \"tripId\": \"TRIP-001\",\n  \"numTickets\": 1,\n  \"depPlace\": \"NBI\",\n  \"arrPlace\": \"MSA\",\n  \"coachSerial\": 1001,\n  \"travelClass\": \"ECONOMY\",\n  \"price\": 1500,\n  \"passengers\": [\n    {\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\",\n      \"cellNo\": \"+254712345678\",\n      \"discount\": \"NONE\",\n      \"date\": \"2026-04-23\"\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"basketId\": 5001,\n    \"totalAmount\": 1500,\n    \"currency\": \"KES\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Booking Paid",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{paymentBaseUrl}}/api/v1/intercape/booking/paid",
+              "host": ["{{paymentBaseUrl}}"],
+              "path": ["api", "v1", "intercape", "booking", "paid"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"TXN-20260422-005\",\n  \"basketId\": 5001,\n  \"purchFirstName\": \"John\",\n  \"purchLastName\": \"Doe\",\n  \"purchContact\": \"john.doe@example.com\",\n  \"purchCell\": \"+254712345678\",\n  \"tripId\": 1001,\n  \"coachSerial\": 1001,\n  \"depPlace\": \"NBI\",\n  \"arrPlace\": \"MSA\",\n  \"travelClass\": \"ECONOMY\",\n  \"numTickets\": 1,\n  \"price\": 1500,\n  \"passengers\": [\n    {\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\",\n      \"cellNo\": \"+254712345678\",\n      \"discount\": \"NONE\",\n      \"date\": \"2026-04-23\"\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"ticketSerial\": \"TKT-20260422-001\",\n    \"transactionId\": \"TXN-20260422-005\",\n    \"status\": \"CONFIRMED\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Payment Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{paymentBaseUrl}}/api/v1/intercape/payment-status",
+              "host": ["{{paymentBaseUrl}}"],
+              "path": ["api", "v1", "intercape", "payment-status"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"TXN-20260422-005\",\n  \"ticketSerial\": \"TKT-20260422-001\",\n  \"status\": \"PAID\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"00\",\n  \"data\": {\n    \"transactionId\": \"TXN-20260422-005\",\n    \"ticketSerial\": \"TKT-20260422-001\",\n    \"status\": \"PAID\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "Payment — Third Party",
       "item": [
         {
           "name": "Send SMS",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": {
               "raw": "{{paymentBaseUrl}}/api/v1/third-party/send-sms/+254712345678/Hello%20World",
               "host": ["{{paymentBaseUrl}}"],
               "path": ["api", "v1", "third-party", "send-sms", "+254712345678", "Hello%20World"]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK — Success (no body)",
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": ""
+            }
+          ]
         }
       ]
     }
+
   ]
 }

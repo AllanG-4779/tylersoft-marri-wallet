@@ -39,12 +39,12 @@ public class UserController {
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<ApiResponse<CustomerResponse>> register(
-            @RequestPart("data") RegisterRequest request,
+            @RequestPart("data") UniversalRequestWrapper<RegisterRequest> request,
             ServerWebExchange serverWebExchange) {
 
         return validate(request)
-                .then(customerService.register(request, serverWebExchange))
-                .map(r -> ApiResponse.ok("Registration successful. OTP sent to " + request.phoneNumber(), r));
+                .then(customerService.register(request.data(), serverWebExchange))
+                .map(r -> ApiResponse.ok("Registration successful. OTP sent to " + request.data().phoneNumber(), r));
     }
 
     /** Step 2 — Verify the OTP sent to the customer's phone. */

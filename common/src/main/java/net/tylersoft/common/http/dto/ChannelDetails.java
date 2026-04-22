@@ -19,8 +19,8 @@ public record ChannelDetails(
 
         @NotBlank(message = "channelDetails.channel is required")
         @Pattern(
-                regexp = "ANDROID|IOS|WEB|USSD|API",
-                message = "channelDetails.channel must be one of: ANDROID, IOS, WEB, USSD, API"
+                regexp = "MOBILE|WEB|INTEGRATOR",
+                message = "channelDetails.channel must be one of: MOBILE, WEB or INTEGRATOR"
         )
         String channel,
 
@@ -30,4 +30,5 @@ public record ChannelDetails(
         /** OS family, e.g. "Android", "iOS". */
         String os
 
-) {}
+) {
+}

@@ -4,7 +4,8 @@
       "Bash(rm *)",
       "Read(//c/Users/USER/Downloads/**)",
       "Bash(xargs grep *)",
-      "Bash(xargs ls *)"
+      "Bash(xargs ls *)",
+      "Bash(xargs cat *)"
     ]
   }
 }
