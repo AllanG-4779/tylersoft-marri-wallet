@@ -35,29 +35,6 @@ public record RegisterRequest(
         String idType,
 
         @Size(max = 100, message = "ID number must not exceed 100 characters")
-        String idNumber,
-
-        // ── Device context (required even at registration for fraud signals) ──────
-
-        @NotBlank(message = "deviceId is required")
-        String deviceId,
-
-        @NotBlank(message = "deviceType is required")
-        @Pattern(
-                regexp = "ANDROID|IOS|WEB|USSD",
-                message = "deviceType must be one of: ANDROID, IOS, WEB, USSD"
-        )
-        String deviceType,
-
-        @NotBlank(message = "channel is required")
-        @Pattern(
-                regexp = "MOBILE|WEB|USSD|API",
-                message = "channel must be one of: MOBILE, WEB, USSD, API"
-        )
-        String channel,
-
-        String deviceModel,
-
-        String appVersion
+        String idNumber
 
 ) {}

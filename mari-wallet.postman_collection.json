@@ -166,7 +166,7 @@
               "formdata": [
                 {
                   "key": "data",
-                  "value": "{\"firstName\":\"John\",\"lastName\":\"Doe\",\"phoneNumber\":\"254712345678\",\"email\":\"john.doe@example.com\",\"idType\":\"NATIONAL_ID\",\"idNumber\":\"12345678\",\"deviceId\":\"device-uuid-001\",\"deviceType\":\"ANDROID\",\"channel\":\"MOBILE\",\"deviceModel\":\"Samsung Galaxy S23\",\"appVersion\":\"1.4.2\"}",
+                  "value": "{\"data\":{\"firstName\":\"John\",\"lastName\":\"Doe\",\"phoneNumber\":\"254712345678\",\"email\":\"john.doe@example.com\",\"idType\":\"NATIONAL_ID\",\"idNumber\":\"12345678\"},\"channelDetails\":{\"deviceId\":\"device-uuid-001\",\"name\":\"Samsung Galaxy S23\",\"osVersion\":\"Android 14\",\"appVersion\":\"1.4.2\",\"channel\":\"MOBILE\",\"ipAddress\":\"192.168.1.100\",\"os\":\"Android\"}}",
                   "type": "text",
                   "contentType": "application/json"
                 },
