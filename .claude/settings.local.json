@@ -5,7 +5,8 @@
       "Read(//c/Users/USER/Downloads/**)",
       "Bash(xargs grep *)",
       "Bash(xargs ls *)",
-      "Bash(xargs cat *)"
+      "Bash(xargs cat *)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

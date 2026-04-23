@@ -16,6 +16,7 @@ target/
 
 ### IntelliJ IDEA ###
 .idea
+.key
 *.iws
 *.iml
 *.ipr
@@ -35,6 +36,7 @@ build/
 
 ### Environment files ###
 .env
+**/*.key
 .env.*
 **/.env
 **/.env.*
@@ -42,3 +44,5 @@ build/
 ### Local credential profiles ###
 **/src/main/resources/application-test.yml
 **/src/main/resources/application-local.yml
+**/src/main/resources/private.key
+**/src/main/resources/public.key
