@@ -1,6 +1,7 @@
 package net.tylersoft.payment.card;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.tylersoft.common.http.dto.ApiResponse;
 import net.tylersoft.payment.card.api.CardDeviceDataRequest;
 import net.tylersoft.payment.card.api.CardPaymentRequest;
@@ -14,6 +15,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/card")
 @RequiredArgsConstructor
@@ -38,6 +40,7 @@ public class CardController {
 
     @PostMapping("/callback")
     public Mono<Map<String, String>> callback(@RequestBody TcpCallbackPayload payload) {
+        log.info("CARD PAYMENT CALLBACK {} {} {}", payload.tranid(), payload.status(), payload.statuscode());
         return logService.updateCallback(payload.tranid(), payload.toString())
                 .thenReturn(Map.of("statuscode", "00", "tranid", payload.tranid()));
     }
