@@ -26,7 +26,10 @@ spring:
       max-size: 10
       initial-size: 2
   cloud:
+
     consul:
+      discovery:
+        prefer-ip-address: true
       host: ${CONSUL_HOST:localhost}
       port: ${CONSUL_PORT:8500}
 

@@ -21,6 +21,8 @@ spring:
     consul:
       host: ${CONSUL_HOST:localhost}
       port: ${CONSUL_PORT:8500}
+      discovery:
+          prefer-ip-address: true
 # RSA key paths — omit for ephemeral dev keys (NOT for production).
 # In production set these to point to your PEM files:
 #   JWT_PRIVATE_KEY_PATH=file:/secrets/private.pem
