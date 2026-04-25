@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.tylersoft.wallet.charge.ChargeValueType;
 import net.tylersoft.wallet.common.TransactionStatus;
+import net.tylersoft.wallet.airtime.AirtimeGatewayPort;
+import net.tylersoft.wallet.airtime.AirtimeGatewayRequest;
 import net.tylersoft.wallet.gateway.CardChargeRequest;
 import net.tylersoft.wallet.gateway.DeviceFingerprintRequest;
 import net.tylersoft.wallet.gateway.PaymentGatewayPort;
@@ -84,6 +86,7 @@ public class TransactionSteps {
             msg.setPhoneNumber(req.getPhoneNumber());
             msg.setTransactionType(req.getTransactionType());
             msg.setTransactionCode(req.getTransactionCode());
+            msg.setRecipientPhoneNumber(req.getRecipientPhoneNumber());
             msg.setTotalCharge(BigDecimal.ZERO);
             msg.setStatus(TransactionStatus.STARTED.code());
             msg.setCreatedOn(OffsetDateTime.now());
@@ -546,6 +549,40 @@ public class TransactionSteps {
                     .onErrorResume(ex -> {
                         log.error("PG charge error for esbRef={}", msg.getId(), ex);
                         return Mono.just(ctx.withFailure("PG01", "Payment gateway error: " + ex.getMessage()));
+                    });
+        };
+    }
+
+    /**
+     * Calls the airtime gateway to dispense airtime to the recipient phone.
+     * On success the pipeline proceeds to {@code post()} which settles both actual
+     * and available balances atomically. On failure the context is marked failed
+     * and {@code markFailed()} rolls back — balances are untouched since
+     * {@code post()} never ran.
+     */
+    public TransactionStep initiateAirtime(AirtimeGatewayPort ag) {
+        return ctx -> {
+            var msg = ctx.getStagedMessage();
+            AirtimeGatewayRequest req = new AirtimeGatewayRequest(
+                    msg.getTransactionRef(),
+                    msg.getTransactionCode(),
+                    msg.getRecipientPhoneNumber(),
+                    msg.getAmount(),
+                    msg.getCurrency()
+            );
+            return ag.purchase(req)
+                    .flatMap(result -> {
+                        if (result.success()) {
+                            log.info("Airtime dispensed ref={} provider={}", msg.getTransactionRef(), result.providerReference());
+                            msg.setReceiptNumber(result.providerReference());
+                            return trxMessageRepository.save(msg).thenReturn(ctx.toBuilder().stagedMessage(msg).build());
+                        }
+                        log.warn("Airtime failed ref={} code={}", msg.getTransactionRef(), result.responseCode());
+                        return Mono.just(ctx.withFailure(result.responseCode(), result.responseMessage()));
+                    })
+                    .onErrorResume(ex -> {
+                        log.error("Airtime gateway error ref={}", msg.getTransactionRef(), ex);
+                        return Mono.just(ctx.withFailure("AT01", "Airtime gateway error: " + ex.getMessage()));
                     });
         };
     }
