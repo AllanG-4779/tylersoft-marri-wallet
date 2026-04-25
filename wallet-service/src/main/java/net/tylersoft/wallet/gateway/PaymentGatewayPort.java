@@ -4,11 +4,7 @@ import reactor.core.publisher.Mono;
 
 public interface PaymentGatewayPort {
 
-    /**
-     * Initiates a card charge request with the payment gateway.
-     *
-     * @param request card and transaction details
-     * @return the gateway's response — never throws; failures are encoded in {@link CardChargeResult#success()}
-     */
+    Mono<DeviceFingerprintResult> deviceFingerprint(DeviceFingerprintRequest request);
+
     Mono<CardChargeResult> charge(CardChargeRequest request);
 }

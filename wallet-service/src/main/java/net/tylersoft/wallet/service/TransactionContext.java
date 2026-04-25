@@ -9,6 +9,7 @@ import net.tylersoft.wallet.model.ServiceManagement;
 import net.tylersoft.wallet.model.TransactionEntry;
 import net.tylersoft.wallet.model.TrxMessage;
 import net.tylersoft.wallet.topup.CardDetails;
+import net.tylersoft.wallet.topup.CardTopupExtras;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -28,6 +29,7 @@ public class TransactionContext {
 
 
     private final FTRequest request;
+
 
     // ── Step 1: Staging ───────────────────────────────────────────────────────
     /** The pending record written to {@code trx_messages}. */
@@ -49,6 +51,12 @@ public class TransactionContext {
     // ── Card topup extras ─────────────────────────────────────────────────────
     /** Card details supplied by the customer — only present for card topup flows. */
     private final CardDetails cardDetails;
+    /** Browser/device context from the client — only present for card topup flows. */
+    private final CardTopupExtras topupExtras;
+
+    // ── Device fingerprint result — set by initiateDeviceFingerprint step ─────
+    private final String deviceDataCollectionUrl;
+    private final String deviceAccessToken;
 
     private final boolean failed;
     private final String  failureCode;

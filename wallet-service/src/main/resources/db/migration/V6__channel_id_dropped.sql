@@ -1,0 +1,1 @@
+ALTER TABLE cfg_service_management DROP COLUMN channel_id;

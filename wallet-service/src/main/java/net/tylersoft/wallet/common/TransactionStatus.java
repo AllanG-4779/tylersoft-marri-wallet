@@ -5,7 +5,8 @@ public enum TransactionStatus {
     STARTED((short) 0),
     COMPLETED((short) 1),
     FAILED((short) 2),
-    CALLBACK_WAIT((short) 3);
+    CALLBACK_WAIT((short) 3),
+    DEVICE_PROFILING((short) 4);
 
     private final short code;
 

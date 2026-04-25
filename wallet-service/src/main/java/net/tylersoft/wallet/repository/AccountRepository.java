@@ -12,7 +12,8 @@ public interface AccountRepository extends R2dbcRepository<Account, Long> {
 
     Mono<Account> findByAccountNumber(String accountNumber);
 
-    Flux<Account> findByPhoneNumber(String phoneNumber);
+    Mono<Account> findTopByPhoneNumber(String phoneNumber);
+
 
     Mono<Boolean> existsByAccountNumber(String accountNumber);
 

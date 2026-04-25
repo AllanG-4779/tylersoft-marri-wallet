@@ -5,23 +5,15 @@ import lombok.extern.slf4j.Slf4j;
 import net.tylersoft.wallet.charge.ChargeValueType;
 import net.tylersoft.wallet.common.TransactionStatus;
 import net.tylersoft.wallet.gateway.CardChargeRequest;
+import net.tylersoft.wallet.gateway.DeviceFingerprintRequest;
 import net.tylersoft.wallet.gateway.PaymentGatewayPort;
-import net.tylersoft.wallet.model.Account;
-import net.tylersoft.wallet.model.ChargeConfig;
-import net.tylersoft.wallet.model.ServiceManagement;
-import net.tylersoft.wallet.model.TransactionCharge;
-import net.tylersoft.wallet.model.TransactionEntry;
-import net.tylersoft.wallet.model.TrxMessage;
-import net.tylersoft.wallet.repository.AccountRepository;
-import net.tylersoft.wallet.repository.ChargeConfigRepository;
-import net.tylersoft.wallet.repository.ServiceManagementRepository;
-import net.tylersoft.wallet.repository.TransactionChargeRepository;
-import net.tylersoft.wallet.repository.TransactionEntryRepository;
-import net.tylersoft.wallet.repository.TrxMessageRepository;
+import net.tylersoft.wallet.model.*;
+import net.tylersoft.wallet.repository.*;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -61,6 +53,7 @@ public class TransactionSteps {
     private final TransactionEntryRepository transactionEntryRepository;
     private final TransactionChargeRepository transactionChargeRepository;
     private final TransactionalOperator transactionalOperator;
+    private final SysServiceRepository sysServiceRepository;
 
     // ── Step 1: Staging ───────────────────────────────────────────────────────
 
@@ -69,18 +62,28 @@ public class TransactionSteps {
      * Assigns a unique {@code transactionRef}. All downstream steps reference
      * this record via {@link TransactionContext#getStagedMessage()}.
      */
+    private Mono<ServiceManagement> getServiceConfiguration(String coreService, String serviceCode) {
+        return sysServiceRepository.findByTransactionType(coreService)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Service not configured")))
+                .flatMap(each -> serviceManagementRepository.findByServiceIdAndServiceCode(each.getId(), serviceCode)
+                        .switchIfEmpty(Mono.error(new IllegalArgumentException("Service not configured")))
+                        .flatMap(Mono::just));
+    }
+
     public TransactionStep staging() {
         return ctx -> {
             var req = ctx.getRequest();
 
             TrxMessage msg = new TrxMessage();
-            msg.setTransactionRef(UUID.randomUUID().toString());
+            String ref = req.getTransactionRef() != null ? req.getTransactionRef() : UUID.randomUUID().toString();
+            msg.setTransactionRef(ref);
             msg.setAmount(BigDecimal.valueOf(req.getAmount()));
             msg.setDebitAccount(req.getDebitAccount());
             msg.setCreditAccount(req.getCreditAccount());
             msg.setCurrency(req.getCurrency());
             msg.setPhoneNumber(req.getPhoneNumber());
             msg.setTransactionType(req.getTransactionType());
+            msg.setTransactionCode(req.getTransactionCode());
             msg.setTotalCharge(BigDecimal.ZERO);
             msg.setStatus(TransactionStatus.STARTED.code());
             msg.setCreatedOn(OffsetDateTime.now());
@@ -103,8 +106,7 @@ public class TransactionSteps {
     public TransactionStep validateTransaction() {
         return ctx -> {
             var req = ctx.getRequest();
-            Mono<ServiceManagement> svcMono = serviceManagementRepository.findByServiceCode(req.getTransactionType())
-                    .switchIfEmpty(Mono.error(new TxException("T03", "No service configuration for type: " + req.getTransactionType())));
+            Mono<ServiceManagement> svcMono = getServiceConfiguration(req.getTransactionType(), req.getTransactionCode());
             Mono<Account> debitMono = accountRepository.findByAccountNumber(req.getDebitAccount())
                     .switchIfEmpty(Mono.error(new TxException("T01", "Debit account not found: " + req.getDebitAccount())));
 
@@ -340,9 +342,9 @@ public class TransactionSteps {
         List<ChargeConfig> configs = ctx.getChargeConfigs();
         if (configs == null || configs.isEmpty()) return Mono.empty();
 
-        Account        debit    = ctx.getDebitAccount();
-        String         currency = ctx.getRequest().getCurrency();
-        OffsetDateTime now      = OffsetDateTime.now();
+        Account debit = ctx.getDebitAccount();
+        String currency = ctx.getRequest().getCurrency();
+        OffsetDateTime now = OffsetDateTime.now();
 
         return Flux.fromIterable(configs)
                 .concatMap(cfg -> {
@@ -423,41 +425,54 @@ public class TransactionSteps {
     public TransactionStep validateCardTopupTransaction() {
         return ctx -> {
             var req = ctx.getRequest();
-            Mono<ServiceManagement> svcMono = serviceManagementRepository.findByServiceCode(req.getTransactionType())
-                    .switchIfEmpty(Mono.error(new TxException("T03", "No service configuration for type: " + req.getTransactionType())));
-            Mono<Account> debitMono = accountRepository.findByAccountNumber(req.getDebitAccount())
-                    .switchIfEmpty(Mono.error(new TxException("T01", "GL account not found: " + req.getDebitAccount())));
+            Mono<ServiceManagement> svcMono = getServiceConfiguration(ctx.getRequest().getTransactionType(), ctx.getRequest().getTransactionCode());
+
             Mono<Account> creditMono = accountRepository.findByAccountNumber(req.getCreditAccount())
                     .switchIfEmpty(Mono.error(new TxException("T02", "Credit account not found: " + req.getCreditAccount())));
 
-            return Mono.zip(debitMono, creditMono, svcMono)
+            return Mono.zip(creditMono, svcMono)
                     .flatMap(tuple -> {
-                        Account debit = tuple.getT1();
-                        Account credit = tuple.getT2();
-                        ServiceManagement svc = tuple.getT3();
 
-                        if (!Boolean.TRUE.equals(debit.getAllowDr()))
-                            return Mono.just(ctx.withFailure("T06", "GL account does not allow debits"));
-                        if (Boolean.TRUE.equals(credit.getBlocked()))
-                            return Mono.just(ctx.withFailure("T07", "Credit account is blocked"));
-                        if (Boolean.TRUE.equals(credit.getDormant()))
-                            return Mono.just(ctx.withFailure("T11", "Credit account is dormant"));
-                        if (!Boolean.TRUE.equals(credit.getAllowCr()))
-                            return Mono.just(ctx.withFailure("T08", "Credit account does not allow credits"));
-                        if (!req.getPhoneNumber().equals(credit.getPhoneNumber()))
-                            return Mono.just(ctx.withFailure("T09", "Phone number does not match wallet account"));
+                        Account credit = tuple.getT1();
+                        ServiceManagement svc = tuple.getT2();
 
-                        log.debug("Card topup validated — gl={} credit={} service={}",
-                                debit.getAccountNumber(), credit.getAccountNumber(), svc.getServiceCode());
-                        return Mono.just(ctx.toBuilder()
-                                .debitAccount(debit)
-                                .creditAccount(credit)
-                                .serviceManagement(svc)
-                                .build());
+                        return accountRepository.findById(svc.getAccountId())
+                                .flatMap(debit -> {
+
+                                    if (!Boolean.TRUE.equals(debit.getAllowDr()))
+                                        return Mono.just(ctx.withFailure("T06", "GL account does not allow debits"));
+                                    if (Boolean.TRUE.equals(credit.getBlocked()))
+                                        return Mono.just(ctx.withFailure("T07", "Credit account is blocked"));
+                                    if (Boolean.TRUE.equals(credit.getDormant()))
+                                        return Mono.just(ctx.withFailure("T11", "Credit account is dormant"));
+                                    if (!Boolean.TRUE.equals(credit.getAllowCr()))
+                                        return Mono.just(ctx.withFailure("T08", "Credit account does not allow credits"));
+                                    if (!req.getPhoneNumber().equals(credit.getPhoneNumber()))
+                                        return Mono.just(ctx.withFailure("T09", "Phone number does not match wallet account"));
+
+                                    log.debug("Card topup validated — gl={} credit={} service={}",
+                                            debit.getAccountNumber(), credit.getAccountNumber(), svc.getServiceCode());
+                                    var staged = ctx.getStagedMessage();
+                                    staged.setDebitAccount(debit.getAccountNumber());
+                                    ctx.toBuilder().stagedMessage(staged).build();
+                                    return trxMessageRepository.save(staged)
+                                            .flatMap(updated -> Mono.just(ctx.toBuilder()
+                                                    .debitAccount(debit)
+                                                    .creditAccount(credit)
+                                                    .stagedMessage(updated)
+                                                    .serviceManagement(svc)
+                                                    .build()));
+                                });
                     })
                     .onErrorResume(TxException.class, ex ->
                             Mono.just(ctx.withFailure(ex.code, ex.getMessage())));
         };
+    }
+
+    public TransactionStep updateCreditAccount() {
+        return ctx -> getServiceConfiguration(ctx.getRequest().getTransactionType(), ctx.getRequest().getTransactionCode())
+                .flatMap(cfg -> accountRepository.findById(cfg.getAccountId())
+                        .flatMap(account -> Mono.just(ctx.toBuilder().debitAccount(account).build())));
     }
 
     /**
@@ -491,15 +506,30 @@ public class TransactionSteps {
         return ctx -> {
             var msg = ctx.getStagedMessage();
             var card = ctx.getCardDetails();
+            var extras = ctx.getTopupExtras();
 
             CardChargeRequest chargeReq = new CardChargeRequest(
-                    String.valueOf(msg.getId()),
+                    msg.getTransactionRef(),
+                    msg.getChannelReference(),
                     card.pan(),
                     card.cvv(),
                     card.expiry(),
+                    card.cardType(),
                     ctx.getRequest().getAmount(),
                     ctx.getRequest().getCurrency(),
-                    ctx.getRequest().getPhoneNumber()
+                    ctx.getRequest().getPhoneNumber(),
+                    extras != null ? extras.cardholderName() : null,
+                    extras != null ? extras.email() : null,
+                    extras != null ? extras.ipAddress() : null,
+                    extras != null ? extras.httpAcceptContent() : null,
+                    extras != null ? extras.httpBrowserLanguage() : null,
+                    extras != null ? extras.httpBrowserJavaEnabled() : null,
+                    extras != null ? extras.httpBrowserJavaScriptEnabled() : null,
+                    extras != null ? extras.httpBrowserColorDepth() : null,
+                    extras != null ? extras.httpBrowserScreenHeight() : null,
+                    extras != null ? extras.httpBrowserScreenWidth() : null,
+                    extras != null ? extras.httpBrowserTimeDifference() : null,
+                    extras != null ? extras.userAgentBrowserValue() : null
             );
 
             return pg.charge(chargeReq)
@@ -518,6 +548,81 @@ public class TransactionSteps {
                         return Mono.just(ctx.withFailure("PG01", "Payment gateway error: " + ex.getMessage()));
                     });
         };
+    }
+
+    /**
+     * Calls the payment gateway device fingerprint endpoint (Phase 1 of 3DS card topup).
+     * On success, stores the returned {@code referenceId} in {@code TrxMessage.channelReference}
+     * and updates the transaction status to {@link TransactionStatus#DEVICE_PROFILING}.
+     */
+    public TransactionStep initiateDeviceFingerprint(PaymentGatewayPort pg) {
+        return ctx -> {
+            var msg = ctx.getStagedMessage();
+            DeviceFingerprintRequest req = getDeviceFingerprintRequest(ctx, msg);
+
+            return pg.deviceFingerprint(req)
+                    .flatMap(result -> {
+                        if (result.success()) {
+                            log.info("Device fingerprint success tranid={} referenceId={}",
+                                    msg.getTransactionRef(), result.referenceId());
+                            msg.setChannelReference(result.referenceId());
+                            return trxMessageRepository.save(msg)
+                                    .flatMap(saved -> asyncUpdateStatus(saved.getId(),
+                                            TransactionStatus.DEVICE_PROFILING,
+                                            result.statusCode(), result.message()))
+                                    .thenReturn(ctx.toBuilder()
+                                            .stagedMessage(msg)
+                                            .deviceDataCollectionUrl(result.deviceDataCollectionUrl())
+                                            .deviceAccessToken(result.accessToken())
+                                            .build());
+                        }
+                        log.warn("Device fingerprint failed tranid={} code={}",
+                                msg.getTransactionRef(), result.statusCode());
+                        return Mono.just(ctx.withFailure(result.statusCode(), result.message()));
+                    })
+                    .onErrorResume(ex -> {
+                        log.error("Device fingerprint error tranid={}", msg.getTransactionRef(), ex);
+                        return Mono.just(ctx.withFailure("PG01",
+                                "Payment gateway error: " + ex.getMessage()));
+                    });
+        };
+    }
+
+    private static DeviceFingerprintRequest getDeviceFingerprintRequest(TransactionContext ctx, TrxMessage msg) {
+        var card = ctx.getCardDetails();
+        var extras = ctx.getTopupExtras();
+
+        String[] parts = card.expiry().split("/");
+        String month = parts[0].trim();
+        String year = parts.length > 1 ? parts[1].trim() : "";
+        if (year.length() == 2) year = "20" + year;
+
+        String holderName = (extras != null && extras.cardholderName() != null)
+                ? extras.cardholderName() : "John Doe";
+        String[] names = holderName.split(" ", 2);
+        String firstName = names[0];
+        String secondName = names.length > 1 ? names[1] : "";
+
+        String phone = ctx.getRequest().getPhoneNumber();
+        String localPhone = (phone != null && phone.startsWith("267")) ? phone.substring(3) : phone;
+
+        String amount = String.format("%.2f", ctx.getRequest().getAmount());
+
+        return new DeviceFingerprintRequest(
+                msg.getTransactionRef(),
+                amount,
+                ctx.getRequest().getCurrency(),
+                "Botswana",
+                firstName,
+                secondName,
+                localPhone,
+                extras != null ? extras.email() : null,
+                card.pan(),
+                month,
+                year,
+                card.cvv(),
+                card.cardType()
+        );
     }
 
     // ── Async status update ───────────────────────────────────────────────────

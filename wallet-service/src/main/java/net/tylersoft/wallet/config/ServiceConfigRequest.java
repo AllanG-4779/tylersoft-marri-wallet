@@ -3,14 +3,14 @@ package net.tylersoft.wallet.config;
 import java.math.BigDecimal;
 
 public record ServiceConfigRequest(
-        Integer serviceId,
         String externalServiceId,
-        Integer channelId,
         String serviceCode,
         boolean isExternal,
-        Long accountId,
+        /** ISO currency code for the auto-created GL account (e.g. "BWP"). Only used when isExternal=true. */
+        String currency,
         String senderNarration,
         String receiverNarration,
+        String transactionType,
         BigDecimal dailyLimit,
         BigDecimal weeklyLimit,
         BigDecimal monthlyLimit,

@@ -18,6 +18,6 @@ public record ApiResponse<T>(
     }
 
     public static <T> ApiResponse<T> error(String error) {
-        return new ApiResponse<>("01", null, null, error);
+        return new ApiResponse<>("01", error, null, error);
     }
 }

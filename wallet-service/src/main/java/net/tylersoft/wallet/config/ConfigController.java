@@ -21,8 +21,9 @@ public class ConfigController {
 
     @PostMapping("/services")
     public Mono<ApiResponse<ServiceManagement>> addServiceConfig(
-            @RequestBody UniversalRequestWrapper<ServiceConfigRequest> request) {
-        return configService.addServiceConfig(request.data())
+            @RequestBody UniversalRequestWrapper<ServiceConfigRequest> request, @ModelAttribute String authenticatedUser) {
+
+        return configService.addServiceConfig(request.data(), authenticatedUser)
                 .map(ApiResponse::ok)
                 .onErrorResume(IllegalArgumentException.class,
                         ex -> Mono.just(ApiResponse.error(ex.getMessage())));

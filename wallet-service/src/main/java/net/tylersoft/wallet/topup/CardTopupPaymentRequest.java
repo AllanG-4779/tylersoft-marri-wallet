@@ -1,18 +1,8 @@
-package net.tylersoft.wallet.gateway;
+package net.tylersoft.wallet.topup;
 
-public record CardChargeRequest(
+public record CardTopupPaymentRequest(
         String esbRef,
-        String referenceId,
-        String pan,
-        String cvv,
-        String expiry,
-        String cardType,
-        double amount,
-        String currency,
-        String phoneNumber,
-        // Optional — null means PaymentServiceGateway applies defaults
-        String cardholderName,
-        String email,
+        CardDetails card,
         String ipAddress,
         String httpAcceptContent,
         String httpBrowserLanguage,

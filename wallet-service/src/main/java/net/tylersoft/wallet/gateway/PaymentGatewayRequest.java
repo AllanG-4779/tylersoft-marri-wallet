@@ -1,18 +1,20 @@
 package net.tylersoft.wallet.gateway;
 
-public record CardChargeRequest(
-        String esbRef,
-        String referenceId,
-        String pan,
-        String cvv,
-        String expiry,
-        String cardType,
-        double amount,
+record PaymentGatewayRequest(
+        String tranid,
+        String amount,
         String currency,
-        String phoneNumber,
-        // Optional — null means PaymentServiceGateway applies defaults
-        String cardholderName,
+        String country,
+        String referenceId,
+        String firstname,
+        String secondname,
+        String phone,
         String email,
+        String cardNumber,
+        String cardExpiryMonth,
+        String cardExpiryYear,
+        String cardCvv,
+        String cardType,
         String ipAddress,
         String httpAcceptContent,
         String httpBrowserLanguage,

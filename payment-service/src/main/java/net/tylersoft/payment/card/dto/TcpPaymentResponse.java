@@ -5,5 +5,5 @@ public record TcpPaymentResponse(
         String pastepup,
         String accessToken,
         String message,
-        String statusCode
+        String statuscode
 ) {}
