@@ -27,17 +27,17 @@ public class AccountQueryService {
 
     private static final int MAX_LIMIT = 50;
 
-    private final AccountRepository         accountRepository;
-    private final CurrencyRepository        currencyRepository;
-    private final TrxMessageRepository      trxMessageRepository;
-    private final SysServiceRepository      sysServiceRepository;
+    private final AccountRepository accountRepository;
+    private final CurrencyRepository currencyRepository;
+    private final TrxMessageRepository trxMessageRepository;
+    private final SysServiceRepository sysServiceRepository;
     private final ServiceManagementRepository serviceManagementRepository;
 
     @CustomerOnly
     public Mono<EnquiryResponse> enquire(Jwt jwt, AccountEnquiryRequest req) {
         String callerPhone = jwt.getClaimAsString("phone");
-        String type        = req.transactionType();
-        String code        = req.transactionCode();
+        String type = req.transactionType();
+        String code = req.transactionCode();
 
         // 1. Validate enquiry type exists in sys_services and is marked as enquiry
         return sysServiceRepository.findByTransactionTypeAndIsEnquiryTrue(type)
@@ -63,10 +63,12 @@ public class AccountQueryService {
     // ── Enquiry routing ────────────────────────────────────────────────────────
 
     private Mono<EnquiryResponse> resolveEnquiry(AccountEnquiryRequest req, Integer currencyId) {
-        return switch (req.transactionCode().toUpperCase()) {
-            case "BI_WALLET"       -> balanceEnquiry(req, currencyId);
-            case "MINI_STATEMENT"  -> miniStatement(req);
-            case "FULL_STATEMENT"  -> fullStatement(req);
+        var item = String.format("%s_%s", req.transactionType(), req.transactionCode());
+        return switch (item.toUpperCase()) {
+
+            case "BI_WALLET" -> balanceEnquiry(req, currencyId);
+            case "STATEMENT_MINI" -> miniStatement(req);
+            case "STATEMENT_FULL" -> fullStatement(req);
             default -> Mono.error(new IllegalArgumentException(
                     "Unknown transaction code: " + req.transactionCode()));
         };
@@ -104,7 +106,7 @@ public class AccountQueryService {
 
     private Mono<EnquiryResponse> fullStatement(AccountEnquiryRequest req) {
         OffsetDateTime from = parseDate(req.fromDate(), OffsetDateTime.now().minusMonths(1));
-        OffsetDateTime to   = parseDate(req.toDate(),   OffsetDateTime.now());
+        OffsetDateTime to = parseDate(req.toDate(), OffsetDateTime.now());
         return trxMessageRepository.findStatement(req.accountNumber(), from, to)
                 .map(msg -> toEntry(msg, req.accountNumber()))
                 .collectList()
@@ -114,9 +116,9 @@ public class AccountQueryService {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private MiniStatementEntry toEntry(net.tylersoft.wallet.model.TrxMessage msg, String accountNumber) {
-        String drCr      = accountNumber.equals(msg.getDebitAccount()) ? "DR" : "CR";
+        String drCr = accountNumber.equals(msg.getDebitAccount()) ? "DR" : "CR";
         String statusName = resolveStatus(msg.getStatus());
-        String narration  = buildNarration(msg.getTransactionType(), msg.getTransactionCode(), drCr);
+        String narration = buildNarration(msg.getTransactionType(), msg.getTransactionCode(), drCr);
         return new MiniStatementEntry(
                 msg.getTransactionRef(),
                 msg.getTransactionType(),
@@ -151,12 +153,12 @@ public class AccountQueryService {
         String direction = "DR".equals(drCr) ? "Payment" : "Receipt";
         if (type == null) return direction;
         return switch (type.toUpperCase()) {
-            case "DEPOSIT"    -> "CR".equals(drCr) ? "Top-up via " + nvl(code, "card") : "GL funding";
+            case "DEPOSIT" -> "CR".equals(drCr) ? "Top-up via " + nvl(code, "card") : "GL funding";
             case "WITHDRAWAL" -> "DR".equals(drCr) ? "Withdrawal via " + nvl(code, "channel") : "Withdrawal credit";
-            case "FT"         -> "DR".equals(drCr) ? "Transfer sent" : "Transfer received";
-            case "AIRTIME"    -> "Airtime purchase";
-            case "BILL"       -> "Bill payment";
-            default           -> direction + " - " + type;
+            case "FT" -> "DR".equals(drCr) ? "Transfer sent" : "Transfer received";
+            case "AIRTIME" -> "Airtime purchase";
+            case "BILL" -> "Bill payment";
+            default -> direction + " - " + type;
         };
     }
 
