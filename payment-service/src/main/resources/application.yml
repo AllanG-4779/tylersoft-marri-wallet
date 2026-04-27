@@ -43,6 +43,9 @@ sms:
   api-url: ${SMS_API_URL}
   client-id: ${SMS_CLIENT_ID}
   sender: ${SMS_SENDER}
+  kenyan-sms-username: ${KENYA_SMS_USERNAME}
+  kenyan-sms-password: ${KENYA_SMS_PASSWORD}
+
 
 
 wallet:

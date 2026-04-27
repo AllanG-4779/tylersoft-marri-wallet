@@ -146,8 +146,12 @@ public class QuoteService {
                                             "Transaction charges have changed. Please re-enquire."));
                                 }
                                 return executeTransaction(quote)
-                                        .flatMap(result -> markConsumed(quote)
-                                                .thenReturn(result));
+                                        .flatMap(result -> {
+                                            if ("COMPLETED".equals(result.status())) {
+                                                return markConsumed(quote).thenReturn(result);
+                                            }
+                                            return Mono.just(result);
+                                        });
                             });
                 });
     }

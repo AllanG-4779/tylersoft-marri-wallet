@@ -11,6 +11,8 @@ public class SmsProperties {
     private String apiUrl;
     private String password;
     private String username;
+    private String kenyanSmsUsername;
+    private String kenyanSmsPassword;
     private String clientId;
     private String sender;
 }
