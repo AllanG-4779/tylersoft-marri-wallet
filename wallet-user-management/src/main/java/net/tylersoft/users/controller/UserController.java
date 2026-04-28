@@ -8,6 +8,7 @@ import net.tylersoft.common.http.dto.LookupRequest;
 import net.tylersoft.common.http.dto.UniversalRequestWrapper;
 import net.tylersoft.users.dto.*;
 import net.tylersoft.users.service.CustomerService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;

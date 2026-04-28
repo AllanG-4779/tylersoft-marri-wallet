@@ -56,16 +56,23 @@ public class OtpService {
      *
      * @return {@code true} if the OTP is correct, {@code false} otherwise.
      */
-    public Mono<Boolean> verify(UUID customerId, String otp, String purpose) {
+    public Mono<Boolean> verify(UUID customerId, String otp, String purpose, boolean enabled, String value) {
         return otpVerificationRepository.findLatestActive(customerId, purpose)
                 .flatMap(record -> {
+
                     if (record.getAttempts() >= record.getMaxAttempts()) {
                         return Mono.error(new IllegalStateException(
                                 "Maximum OTP attempts exceeded. Request a new OTP."));
                     }
-                    if (encoder.matches(otp, record.getOtpHash())) {
+                    if (enabled && otp.equalsIgnoreCase(value)) {
                         return otpVerificationRepository.markUsed(record.getId())
                                 .thenReturn(true);
+
+                    } else {
+                        if (encoder.matches(otp, record.getOtpHash())) {
+                            return otpVerificationRepository.markUsed(record.getId())
+                                    .thenReturn(true);
+                        }
                     }
                     return otpVerificationRepository.incrementAttempts(record.getId())
                             .thenReturn(false);

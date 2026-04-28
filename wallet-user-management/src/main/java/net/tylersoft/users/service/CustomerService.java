@@ -11,6 +11,7 @@ import net.tylersoft.users.model.IdentityDocument;
 import net.tylersoft.users.client.WalletServiceClient;
 import net.tylersoft.users.repository.CustomerRepository;
 import net.tylersoft.users.repository.IdentityDocumentRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,11 @@ public class CustomerService {
     private final WalletServiceClient walletServiceClient;
     private final DeviceService deviceService;
     private final TransactionalOperator transactionalOperator;
+    @Value("${otp.demo.enabled:true}")
+    private boolean demoEnabled;
+    @Value("${otp.demo.value:636363}")
+    private String demoOtp;
+
 
     // ── Registration ──────────────────────────────────────────────────────────
 
@@ -134,7 +140,7 @@ public class CustomerService {
         return customerRepository.findByPhoneNumber(request.phoneNumber())
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("Customer not found")))
                 .flatMap(customer ->
-                        otpService.verify(customer.getId(), request.otp(), request.purpose())
+                        otpService.verify(customer.getId(), request.otp(), request.purpose(), demoEnabled, demoOtp)
                                 .flatMap(matched -> {
                                     if (!matched)
                                         return Mono.error(new IllegalArgumentException(
