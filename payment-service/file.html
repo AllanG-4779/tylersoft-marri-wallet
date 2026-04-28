@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>3DS Authentication</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f5f5f5;
+            font-family: sans-serif;
+        }
+
+        .wrapper {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+            width: 420px;
+        }
+
+        .header {
+            padding: 14px 18px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .header strong { color: #111; }
+
+        #loading {
+            padding: 40px;
+            text-align: center;
+            color: #888;
+            font-size: 13px;
+        }
+
+        .spinner {
+            width: 28px;
+            height: 28px;
+            border: 2px solid #eee;
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        iframe#step-up-iframe {
+            display: none;
+            width: 100%;
+            height: 420px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div class="header">
+        Secure 3D Authentication — <strong>Verified by Visa / Mastercard</strong>
+    </div>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        Loading secure authentication...
+    </div>
+
+    <!-- iframe MUST be visible for Cardinal to render OTP -->
+    <iframe
+            id="step-up-iframe"
+            name="step-up-iframe"
+            onload="showIframe()"
+            height="420"
+            width="100%">
+    </iframe>
+</div>
+
+<form
+        id="step-up-form"
+        name="authForm"
+        method="POST"
+        target="step-up-iframe"
+        action="https://cas.client.cardinaltrusted.com/centinelapi/V2/Cruise/StepUp">
+    <input type="hidden" name="JWT" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlYTQ0MDNmNy02NmU3LTQwOTgtYTEwOS0yMGNiZjk2N2ZmMWEiLCJpYXQiOjE3NzcwNTc4NDYsImlzcyI6IjVkNWYyM2RlYWZhODBkMTlkMDk5YzY3NCIsImV4cCI6MTc3NzA1OTY0NiwiT3JnVW5pdElkIjoiNjQxOWIyZjRkODdhMjUwYTQyNTExMzNkIiwiUGF5bG9hZCI6eyJBQ1NVcmwiOiJodHRwczovLzBtZXJjaGFudGFjc3N0YWcuY2FyZGluYWxjb21tZXJjZS5jb20vTWVyY2hhbnRBQ1NXZWIvY3JlcS5qc3AiLCJQYXlsb2FkIjoiZXlKdFpYTnpZV2RsVkhsd1pTSTZJa05TWlhFaUxDSnRaWE56WVdkbFZtVnljMmx2YmlJNklqSXVNaTR3SWl3aWRHaHlaV1ZFVTFObGNuWmxjbFJ5WVc1elNVUWlPaUl6WXpobE1HSmtZUzA1WTJSakxUUTJZell0T0RreU1TMDRNbVkxT1dGaFpEUTBZemtpTENKaFkzTlVjbUZ1YzBsRUlqb2lOemcxTnpBM1pqSXRNR00xTlMwME56WmhMVGxqTVRndE1qRm1aVEU1TnpKbE16STJJaXdpWTJoaGJHeGxibWRsVjJsdVpHOTNVMmw2WlNJNklqQXlJbjAiLCJUcmFuc2FjdGlvbklkIjoiZmVQWmVYWlJvRFFoZFdTamF5TzAifSwiT2JqZWN0aWZ5UGF5bG9hZCI6dHJ1ZSwiUmV0dXJuVXJsIjoiaHR0cHM6Ly93d3cucGF5YmlsbHMuY28uYncvRWNvbW1lcmNlUm91dGVyL2FwaXMvcGF5ZXJfYXV0aFJlc3BvbnNlLnBocCJ9._t2mu_FPN94S3wlxzy6hPopHnxb5nQ-9l89uJ53X2iw"/>
+</form>
+
+<script>
+    // Submit form on load
+    document.getElementById('step-up-form').submit();
+
+    // Swap spinner for iframe once Cardinal responds
+    function showIframe() {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('step-up-iframe').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

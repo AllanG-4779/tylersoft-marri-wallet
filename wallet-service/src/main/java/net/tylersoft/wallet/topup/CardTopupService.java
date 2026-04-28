@@ -5,11 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.tylersoft.wallet.common.FTRequest;
 import net.tylersoft.wallet.common.TransactionStatus;
+import net.tylersoft.wallet.gateway.CardChargeRequest;
 import net.tylersoft.wallet.gateway.PaymentGatewayPort;
-import net.tylersoft.wallet.repository.AccountRepository;
-import net.tylersoft.wallet.repository.ChargeConfigRepository;
-import net.tylersoft.wallet.repository.ServiceManagementRepository;
-import net.tylersoft.wallet.repository.TrxMessageRepository;
+import net.tylersoft.wallet.repository.*;
 import net.tylersoft.wallet.service.TransactionContext;
 import net.tylersoft.wallet.service.TransactionPipeline;
 import net.tylersoft.wallet.service.TransactionSteps;
@@ -23,83 +21,77 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class CardTopupService {
 
-    private static final String SERVICE_CODE = "CARD_TOPUP";
-
     private final TransactionSteps steps;
     private final PaymentGatewayPort paymentGateway;
     private final ServiceManagementRepository serviceManagementRepository;
     private final AccountRepository accountRepository;
+    private final SysServiceRepository serviceRepository;
     private final ChargeConfigRepository chargeConfigRepository;
     private final TrxMessageRepository trxMessageRepository;
 
-    private TransactionPipeline initiatePipeline;
+    private TransactionPipeline profilePipeline;
 
     @PostConstruct
     void init() {
-        initiatePipeline = TransactionPipeline.builder()
+        profilePipeline = TransactionPipeline.builder()
+//                .step(steps.updateCreditAccount())
                 .step(steps.staging())
                 .step(steps.validateCardTopupTransaction())
-                .step(steps.validateCharges())
+//                .step(steps.upd)
                 .step(steps.validateCardTopupLimits())
-                .step(steps.initiateCardCharge(paymentGateway))
+                .step(steps.initiateDeviceFingerprint(paymentGateway))
                 .onFailure(steps.markFailed())
                 .build();
     }
 
     /**
-     * Phase 1 — initiates a card topup.
-     *
-     * <ol>
-     *   <li>Resolves the GL suspense account from the CARD_TOPUP service configuration.</li>
-     *   <li>Runs the initiate pipeline: staging → validate → charges → limits → PG charge.</li>
-     *   <li>Returns immediately with status {@code CALLBACK_WAIT} — the transaction is not
-     *       fully posted until the payment gateway callback arrives.</li>
-     * </ol>
+     * Phase 1 — device profiling.
+     * <p>
+     * Validates the transaction, stages a record, calls the payment gateway device
+     * fingerprint endpoint, and saves the returned {@code referenceId} in
+     * {@code TrxMessage.channelReference} with status {@code DEVICE_PROFILING}.
+     * <p>
+     * The client must use the returned {@code esbRef} and {@code deviceDataCollectionUrl}
+     * to complete 3DS browser-based device collection, then call {@link #initiate}.
      */
-    public Mono<CardTopupInitiateResponse> initiate(CardTopupRequest request) {
-        return serviceManagementRepository.findByServiceCode(SERVICE_CODE)
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("CARD_TOPUP service is not configured")))
-                .flatMap(svc -> {
-                    if (svc.getAccountId() == null)
-                        return Mono.error(new IllegalArgumentException("CARD_TOPUP service has no GL account configured"));
-                    return accountRepository.findById(svc.getAccountId())
-                            .switchIfEmpty(Mono.error(new IllegalArgumentException(
-                                    "GL account not found for CARD_TOPUP service")));
-                })
-                .flatMap(glAccount -> {
-                    FTRequest ftReq = FTRequest.builder()
-                            .debitAccount(glAccount.getAccountNumber())
-                            .creditAccount(request.creditAccount())
-                            .amount(request.amount())
-                            .currency(request.currency())
-                            .transactionType(SERVICE_CODE)
-                            .phoneNumber(request.phoneNumber())
-                            .build();
+    public Mono<CardProfileResponse> profile(CardProfileRequest request) {
+        FTRequest ftReq = FTRequest.builder()
+                .creditAccount(request.creditAccount())
+                .amount(request.amount())
+                .currency(request.currency())
+                .transactionType("DEPOSIT")
+                .transactionCode("CARD")
+                .phoneNumber(request.phoneNumber())
+                .transactionRef(request.tranid())
+                .build();
 
-                    TransactionContext initialCtx = TransactionContext.builder()
-                            .request(ftReq)
-                            .totalCharge(BigDecimal.ZERO)
-                            .failed(false)
-                            .cardDetails(request.card())
-                            .build();
+        TransactionContext initialCtx = TransactionContext.builder()
+                .request(ftReq)
+                .totalCharge(BigDecimal.ZERO)
+                .failed(false)
+                .cardDetails(request.card())
+                .topupExtras(new CardTopupExtras(
+                        request.cardholderName(),
+                        request.email(),
+                        null, null, null, null, null, null, null, null, null, null
+                ))
+                .build();
 
-                    log.info("Card topup initiate credit={} amount={} currency={}",
-                            request.creditAccount(), request.amount(), request.currency());
+        log.info("Card profile (device fingerprint) credit={} amount={}", request.creditAccount(), request.amount());
 
-                    return initiatePipeline.run(initialCtx);
-                })
+        return profilePipeline.run(initialCtx)
                 .map(ctx -> {
                     if (ctx.isSuccessful()) {
-                        return new CardTopupInitiateResponse(
-                                String.valueOf(ctx.getStagedMessage().getId()),
+                        return new CardProfileResponse(
                                 ctx.getStagedMessage().getTransactionRef(),
-                                TransactionStatus.CALLBACK_WAIT.name(),
-                                "Card charge initiated. Awaiting payment gateway callback."
+                                ctx.getDeviceDataCollectionUrl(),
+                                ctx.getDeviceAccessToken(),
+                                TransactionStatus.DEVICE_PROFILING.name(),
+                                "Device profiling successful. Complete 3DS collection then call /initiate."
                         );
                     }
-                    return new CardTopupInitiateResponse(
-                            null,
-                            null,
+                    return new CardProfileResponse(
+                            null, null, null,
                             TransactionStatus.FAILED.name(),
                             ctx.getFailureCode() + " - " + ctx.getFailureMessage()
                     );
@@ -107,44 +99,115 @@ public class CardTopupService {
     }
 
     /**
-     * Phase 2 — handles the payment gateway callback.
-     *
-     * <p>On a successful callback the transaction is fully posted (DR GL, CR customer wallet).
+     * Phase 2 — initiates the card charge.
+     * <p>
+     * Loads the staged transaction by {@code esbRef}, reads the device fingerprint
+     * {@code referenceId} from {@code TrxMessage.channelReference}, then calls the
+     * payment gateway charge endpoint. On acceptance the status moves to
+     * {@code CALLBACK_WAIT}; the transaction is fully posted when the callback arrives.
+     */
+    public Mono<CardTopupInitiateResponse> initiate(CardTopupPaymentRequest request) {
+        return trxMessageRepository.findByTransactionRef(request.esbRef())
+                .switchIfEmpty(Mono.error(new IllegalArgumentException(
+                        "Transaction not found: " + request.esbRef())))
+                .flatMap(msg -> {
+                    if (msg.getStatus() == null || msg.getStatus() != TransactionStatus.DEVICE_PROFILING.code()) {
+                        return Mono.error(new IllegalStateException(
+                                "Transaction is not in DEVICE_PROFILING state: " + request.esbRef()));
+                    }
+
+                    CardChargeRequest chargeReq = new CardChargeRequest(
+                            msg.getTransactionRef(),   // esbRef / tranid
+                            msg.getChannelReference(), // referenceId from device fingerprint
+                            request.card().pan(),
+                            request.card().cvv(),
+                            request.card().expiry(),
+                            request.card().cardType(),
+                            msg.getAmount().doubleValue(),
+                            msg.getCurrency(),
+                            msg.getPhoneNumber(),
+                            null,                      // cardholderName — gateway defaults to "Wallet User"
+                            null,                      // email         — gateway defaults to phone@wallet.local
+                            request.ipAddress(),
+                            request.httpAcceptContent(),
+                            request.httpBrowserLanguage(),
+                            request.httpBrowserJavaEnabled(),
+                            request.httpBrowserJavaScriptEnabled(),
+                            request.httpBrowserColorDepth(),
+                            request.httpBrowserScreenHeight(),
+                            request.httpBrowserScreenWidth(),
+                            request.httpBrowserTimeDifference(),
+                            request.userAgentBrowserValue()
+                    );
+
+                    log.info("Card charge initiate esbRef={} referenceId={} payload={}", msg.getTransactionRef(), msg.getChannelReference(), chargeReq);
+
+                    return paymentGateway.charge(chargeReq)
+                            .flatMap(result -> {
+                                if (result.success()) {
+                                    return steps.asyncUpdateStatus(msg.getId(),
+                                                    TransactionStatus.CALLBACK_WAIT,
+                                                    result.responseCode(), result.responseMessage())
+                                            .thenReturn(new CardTopupInitiateResponse(
+                                                    String.valueOf(msg.getId()),
+                                                    msg.getTransactionRef(),
+                                                    TransactionStatus.CALLBACK_WAIT.name(),
+                                                    "Card charge initiated. Awaiting payment gateway callback."
+                                            ));
+                                }
+                                log.warn("PG charge rejected esbRef={} code={}", msg.getTransactionRef(), result.responseCode());
+                                return steps.asyncUpdateStatus(msg.getId(),
+                                                TransactionStatus.FAILED,
+                                                result.responseCode(), result.responseMessage())
+                                        .thenReturn(new CardTopupInitiateResponse(
+                                                null, null,
+                                                TransactionStatus.FAILED.name(),
+                                                result.responseCode() + " - " + result.responseMessage()
+                                        ));
+                            })
+                            .onErrorResume(ex -> {
+                                log.error("Card charge error esbRef={}", msg.getTransactionRef(), ex);
+                                return steps.asyncUpdateStatus(msg.getId(),
+                                                TransactionStatus.FAILED, "PG01",
+                                                "Payment gateway error: " + ex.getMessage())
+                                        .thenReturn(new CardTopupInitiateResponse(
+                                                null, null,
+                                                TransactionStatus.FAILED.name(),
+                                                "PG01 - Payment gateway error"
+                                        ));
+                            });
+                });
+    }
+
+    /**
+     * Phase 3 — handles the payment gateway callback.
+     * <p>
+     * On a successful callback the transaction is fully posted (DR GL, CR customer wallet).
      * On a failure callback the staged record is marked {@code FAILED}.
-     *
-     * @param callbackRequest the payload received from the payment gateway
      */
     public Mono<Void> handleCallback(CardTopupCallbackRequest callbackRequest) {
-        long esbRef;
-        try {
-            esbRef = Long.parseLong(callbackRequest.esbRef());
-        } catch (NumberFormatException e) {
-            return Mono.error(new IllegalArgumentException("Invalid esbRef: " + callbackRequest.esbRef()));
-        }
-
-        boolean pgSuccess = "00".equals(callbackRequest.responseCode());
-
-        if (!pgSuccess) {
-            log.warn("Card topup callback FAILED esbRef={} code={}", esbRef, callbackRequest.responseCode());
-            return steps.asyncUpdateStatus(esbRef, TransactionStatus.FAILED,
-                    callbackRequest.responseCode(), callbackRequest.responseMessage()).then();
-        }
-
-        log.info("Card topup callback SUCCESS esbRef={} receipt={}", esbRef, callbackRequest.receiptNumber());
-
-        return trxMessageRepository.findById(esbRef)
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("Transaction not found: " + esbRef)))
+        String tranid = callbackRequest.esbRef();
+        boolean pgSuccess = "100".equals(callbackRequest.responseCode());
+        return trxMessageRepository.findByTransactionRef(tranid)
+                .filter(each -> TransactionStatus.CALLBACK_WAIT.code() == each.getStatus())
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Transaction not found or not in CALLBACK_WAIT state: " + tranid)))
                 .flatMap(msg -> {
-                    // Store receipt number on the staged message before posting
+                    if (!pgSuccess) {
+                        log.warn("Card topup callback FAILED tranid={} code={}", tranid, callbackRequest.responseCode());
+                        return steps.asyncUpdateStatus(msg.getId(), TransactionStatus.FAILED,
+                                        callbackRequest.responseCode(), callbackRequest.responseMessage())
+                                .then(Mono.empty());
+                    }
+                    log.info("Card topup callback SUCCESS tranid={} receipt={}", tranid, callbackRequest.receiptNumber());
                     msg.setReceiptNumber(callbackRequest.receiptNumber());
-                    return trxMessageRepository.save(msg);
+                    return trxMessageRepository.save(msg)
+                            .flatMap(this::reconstructContext)
+                            .flatMap(ctx -> TransactionPipeline.builder()
+                                    .step(steps.post())
+                                    .onFailure(steps.markFailed())
+                                    .build()
+                                    .run(ctx));
                 })
-                .flatMap(this::reconstructContext)
-                .flatMap(ctx -> TransactionPipeline.builder()
-                        .step(steps.post())
-                        .onFailure(steps.markFailed())
-                        .build()
-                        .run(ctx))
                 .then();
     }
 
@@ -167,7 +230,7 @@ public class CardTopupService {
                 accountRepository.findByAccountNumber(msg.getCreditAccount())
                         .switchIfEmpty(Mono.error(new IllegalStateException(
                                 "Credit account not found during callback post: " + msg.getCreditAccount()))),
-                serviceManagementRepository.findByServiceCode(msg.getTransactionType())
+                serviceManagementRepository.findByServiceCode(msg.getTransactionCode())
                         .switchIfEmpty(Mono.error(new IllegalStateException(
                                 "Service not found during callback post: " + msg.getTransactionType())))
         ).flatMap(tuple -> {

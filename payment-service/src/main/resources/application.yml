@@ -22,6 +22,8 @@ spring:
           jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8093}/.well-known/jwks.json
   cloud:
     consul:
+      discovery:
+        prefer-ip-address: true
       host: ${CONSUL_HOST:localhost}
       port: ${CONSUL_PORT:8500}
 management:
@@ -41,7 +43,14 @@ sms:
   api-url: ${SMS_API_URL}
   client-id: ${SMS_CLIENT_ID}
   sender: ${SMS_SENDER}
+  kenyan-sms-username: ${KENYA_SMS_USERNAME}
+  kenyan-sms-password: ${KENYA_SMS_PASSWORD}
 
+
+
+wallet:
+  service:
+    base-url: ${WALLET_SERVICE_URL:http://localhost:8090}
 
 tcp:
   base-url: ${TCP_BASE_URL}

@@ -11,5 +11,8 @@ public interface ServiceManagementRepository extends R2dbcRepository<ServiceMana
 
     Flux<ServiceManagement> findByServiceId(Integer serviceId);
 
-    Flux<ServiceManagement> findByChannelId(Integer channelId);
+    Mono<Boolean> existsByServiceCodeAndServiceId(String serviceCode, Integer serviceId);
+
+
+    Mono<ServiceManagement> findByServiceIdAndServiceCode(Integer serviceId, String serviceCode);
 }

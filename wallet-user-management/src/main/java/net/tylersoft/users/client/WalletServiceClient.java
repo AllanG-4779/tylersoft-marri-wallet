@@ -23,10 +23,10 @@ public class WalletServiceClient {
     @Value("${services.wallet-service.url:http://localhost:8090}")
     private String walletServiceUrl;
 
-    @Value("${wallet-service-client.username}")
+    @Value("${services.wallet-service.username}")
     private String serviceUsername;
 
-    @Value("${wallet-service-client.password}")
+    @Value("${services.wallet-service.password}")
     private String servicePassword;
 
     public Mono<WalletAccountResponse> createWalletAccount(String phoneNumber,

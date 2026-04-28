@@ -25,6 +25,7 @@ public class RouteLocatorConfig {
                         .path("/api/v2/accounts/**",
                               "/api/v2/transactions/**",
                               "/api/v2/topup/**",
+                              "/api/v2/airtime/**",
                               "/api/v2/config/**")
                         .uri("lb://wallet-service"))
                 // Payment: billing, intercape, third-party

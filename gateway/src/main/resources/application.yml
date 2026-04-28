@@ -20,6 +20,8 @@ spring:
     consul:
       host: ${CONSUL_HOST:localhost}
       port: ${CONSUL_PORT:8500}
+
+
     gateway:
       globalcors:
         corsConfigurations:

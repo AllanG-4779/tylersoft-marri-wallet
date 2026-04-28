@@ -27,6 +27,8 @@ spring:
       max-acquire-time: 30s
   cloud:
     consul:
+      discovery:
+        prefer-ip-address: true
       host: ${CONSUL_HOST:localhost}
       port: ${CONSUL_PORT:8500}
 
@@ -45,6 +47,9 @@ management:
 service:
   username: ${SERVICE_USERNAME:wallet-svc}
   password: ${SERVICE_PASSWORD:names}
+payment:
+  service:
+    base-url: ${PAYMENT_SERVICE_URL:http://localhost:8092}
 
 logging:
   level:

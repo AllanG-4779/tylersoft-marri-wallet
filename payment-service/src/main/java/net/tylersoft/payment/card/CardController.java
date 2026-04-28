@@ -1,6 +1,7 @@
 package net.tylersoft.payment.card;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.tylersoft.common.http.dto.ApiResponse;
 import net.tylersoft.payment.card.api.CardDeviceDataRequest;
 import net.tylersoft.payment.card.api.CardPaymentRequest;
@@ -14,6 +15,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/card")
 @RequiredArgsConstructor
@@ -21,24 +23,32 @@ public class CardController {
 
     private final CardService cardService;
     private final OutgoingRequestLogService logService;
+    private final WalletServiceClient walletServiceClient;
 
     @PostMapping("/device-fingerprint")
-    public Mono<ApiResponse<TcpDeviceDataResponse>> deviceFingerprint(
+    public Mono<TcpDeviceDataResponse> deviceFingerprint(
             @Validated @RequestBody CardDeviceDataRequest request) {
-        return cardService.deviceDataCollection(request)
-                .map(ApiResponse::ok);
+        return cardService.deviceDataCollection(request);
     }
 
     @PostMapping("/payment")
-    public Mono<ApiResponse<TcpPaymentResponse>> payment(
+    public Mono<TcpPaymentResponse> payment(
             @Validated @RequestBody CardPaymentRequest request) {
         return cardService.payment(request)
-                .map(ApiResponse::ok);
+                ;
     }
 
     @PostMapping("/callback")
     public Mono<Map<String, String>> callback(@RequestBody TcpCallbackPayload payload) {
+        log.info("CARD PAYMENT CALLBACK tranid={} status={} statuscode={}",
+                payload.tranid(), payload.status(), payload.statuscode());
         return logService.updateCallback(payload.tranid(), payload.toString())
+                .then(walletServiceClient.notifyTopupCallback(
+                        payload.tranid(),
+                        payload.statuscode(),
+                        payload.status(),
+                        null
+                ))
                 .thenReturn(Map.of("statuscode", "00", "tranid", payload.tranid()));
     }
 }

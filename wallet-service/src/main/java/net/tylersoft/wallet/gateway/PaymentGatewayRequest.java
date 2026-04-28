@@ -1,0 +1,28 @@
+package net.tylersoft.wallet.gateway;
+
+record PaymentGatewayRequest(
+        String tranid,
+        String amount,
+        String currency,
+        String country,
+        String referenceId,
+        String firstname,
+        String secondname,
+        String phone,
+        String email,
+        String cardNumber,
+        String cardExpiryMonth,
+        String cardExpiryYear,
+        String cardCvv,
+        String cardType,
+        String ipAddress,
+        String httpAcceptContent,
+        String httpBrowserLanguage,
+        String httpBrowserJavaEnabled,
+        String httpBrowserJavaScriptEnabled,
+        String httpBrowserColorDepth,
+        String httpBrowserScreenHeight,
+        String httpBrowserScreenWidth,
+        String httpBrowserTimeDifference,
+        String userAgentBrowserValue
+) {}

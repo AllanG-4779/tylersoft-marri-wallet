@@ -15,8 +15,10 @@ public class NotificationService {
     private final SmsProperties smsProperties;
     private final ReactiveHttpClient httpClient;
     private final OutgoingRequestLogService logService;
+    private final SmsService smsService;
 
     public void sendSmsNotification(String phoneNumber, String message) {
+
         String url = smsProperties.getApiUrl();
         String txId = String.valueOf(System.currentTimeMillis());
         var payload = new SendSMSNotification(
@@ -25,10 +27,16 @@ public class NotificationService {
                 smsProperties.getClientId(), txId, message);
 
         logService.save(txId, "SMS", url, payload)
-                .flatMap(savedLog -> httpClient.post(url, payload, String.class)
-                        .flatMap(resp -> logService.updateSuccess(savedLog.getId(), "OK", resp).thenReturn(resp))
-                        .onErrorResume(ex -> logService.updateFailure(savedLog.getId(), ex.getMessage())
-                                .then(Mono.error(ex))))
+                .flatMap(savedLog -> {
+                    Mono<String> sendMono = phoneNumber.startsWith("254")
+                            ? smsService.sendSms(phoneNumber, message)
+                            : httpClient.post(url, payload, String.class);
+
+                    return sendMono
+                            .flatMap(resp -> logService.updateSuccess(savedLog.getId(), "OK", resp).thenReturn(resp))
+                            .onErrorResume(ex -> logService.updateFailure(savedLog.getId(), ex.getMessage())
+                                    .then(Mono.error(ex)));
+                })
                 .subscribe(
                         resp -> System.out.println("SMS sent successfully: " + resp),
                         err -> System.err.println("Failed to send SMS: " + err.getMessage()));

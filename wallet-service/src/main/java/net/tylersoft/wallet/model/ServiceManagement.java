@@ -20,7 +20,6 @@ public class ServiceManagement {
     private String externalServiceId;
     private Integer ledgerAccountId;
     private Long accountId;
-    private Integer channelId;
     private Integer requestDirectionId;
     private String serviceCode;
     private String receiverNarration;

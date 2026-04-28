@@ -30,7 +30,7 @@ public class TcpClient {
         String url = props.getBaseUrl() + "/tcp/api/request";
         return logService.save(request.tranid(), "TCP_PAYMENT", url, request)
                 .flatMap(log -> httpClient.post(url, request, TcpPaymentResponse.class)
-                        .flatMap(resp -> logService.updateSuccess(log.getId(), resp.statusCode(), resp).thenReturn(resp))
+                        .flatMap(resp -> logService.updateSuccess(log.getId(), resp.statuscode(), resp).thenReturn(resp))
                         .onErrorResume(ex -> logService.updateFailure(log.getId(), ex.getMessage()).then(Mono.error(ex))));
     }
 }
