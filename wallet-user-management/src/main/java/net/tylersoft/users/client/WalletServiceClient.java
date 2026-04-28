@@ -9,6 +9,7 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -39,6 +40,14 @@ public class WalletServiceClient {
                 body,
                 WalletAccountResponse.class
         );
+    }
+
+    public Mono<List<CustomerAccount>> getAccountsByPhone(String phoneNumber) {
+        return httpClient.get(
+                walletServiceUrl + ACCOUNTS_PATH + "/by-phone/" + phoneNumber,
+                Map.of("Authorization", basicAuth(serviceUsername, servicePassword)),
+                CustomerAccountsResponse.class
+        ).map(response -> response.data() != null ? response.data() : List.of());
     }
 
     private String basicAuth(String username, String password) {

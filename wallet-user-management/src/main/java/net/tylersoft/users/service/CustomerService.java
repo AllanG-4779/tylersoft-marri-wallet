@@ -222,7 +222,14 @@ public class CustomerService {
         return customerRepository.findById(customerId)
                 .switchIfEmpty(Mono.error(new IllegalArgumentException(
                         "Customer not found: " + customerId)))
-                .map(CustomerResponse::from);
+                .flatMap(customer ->
+                        walletServiceClient.getAccountsByPhone(customer.getPhoneNumber())
+                                .map(accounts -> CustomerResponse.from(customer, accounts))
+                                .onErrorResume(err -> {
+                                    log.warn("Failed to fetch accounts for customerId={}: {}", customerId, err.getMessage());
+                                    return Mono.just(CustomerResponse.from(customer));
+                                })
+                );
     }
 
 
@@ -231,7 +238,14 @@ public class CustomerService {
                 .switchIfEmpty(Mono.error(new IllegalArgumentException(
                         "Customer not found for phone: " + phoneNumber)))
                 .flatMap(this::retryWalletIfNeeded)
-                .map(CustomerResponse::from);
+                .flatMap(customer ->
+                        walletServiceClient.getAccountsByPhone(customer.getPhoneNumber())
+                                .map(accounts -> CustomerResponse.from(customer, accounts))
+                                .onErrorResume(err -> {
+                                    log.warn("Failed to fetch accounts for phone={}: {}", phoneNumber, err.getMessage());
+                                    return Mono.just(CustomerResponse.from(customer));
+                                })
+                );
     }
 
     private Mono<Customer> retryWalletIfNeeded(Customer customer) {

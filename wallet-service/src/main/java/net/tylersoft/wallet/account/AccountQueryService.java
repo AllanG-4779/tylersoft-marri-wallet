@@ -12,6 +12,7 @@ import net.tylersoft.wallet.repository.SysServiceRepository;
 import net.tylersoft.wallet.repository.TrxMessageRepository;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
@@ -32,6 +33,27 @@ public class AccountQueryService {
     private final TrxMessageRepository trxMessageRepository;
     private final SysServiceRepository sysServiceRepository;
     private final ServiceManagementRepository serviceManagementRepository;
+
+    public Flux<AccountSummary> getAccountsByPhone(String phoneNumber) {
+        return accountRepository.findAllByPhoneNumber(phoneNumber)
+                .flatMap(account ->
+                        currencyRepository.findById(account.getCurrencyId())
+                                .map(currency -> toSummary(account, currency.getIsoCode()))
+                                .defaultIfEmpty(toSummary(account, "KES"))
+                );
+    }
+
+    private AccountSummary toSummary(net.tylersoft.wallet.model.Account account, String currency) {
+        return new AccountSummary(
+                account.getAccountNumber(),
+                account.getAccountName(),
+                currency,
+                account.getActualBalance(),
+                account.getAvailableBalance(),
+                Boolean.TRUE.equals(account.getBlocked()),
+                Boolean.TRUE.equals(account.getDormant())
+        );
+    }
 
     @CustomerOnly
     public Mono<EnquiryResponse> enquire(Jwt jwt, AccountEnquiryRequest req) {

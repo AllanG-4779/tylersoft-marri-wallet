@@ -8,6 +8,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v2/accounts")
 @RequiredArgsConstructor
@@ -29,6 +31,13 @@ public class AccountController {
                 .map(result -> result.isSuccess()
                         ? ApiResponse.ok(result)
                         : ApiResponse.error(result.statusCode() + " - " + result.message()));
+    }
+
+    @GetMapping("/by-phone/{phoneNumber}")
+    public Mono<ApiResponse<List<AccountSummary>>> getByPhone(@PathVariable String phoneNumber) {
+        return accountQueryService.getAccountsByPhone(phoneNumber)
+                .collectList()
+                .map(ApiResponse::ok);
     }
 
     @PostMapping("/enquiry")
