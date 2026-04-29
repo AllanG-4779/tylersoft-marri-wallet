@@ -2,6 +2,7 @@ package net.tylersoft.users.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.tylersoft.common.notification.SmsService;
 import net.tylersoft.users.model.OtpVerification;
 import net.tylersoft.users.repository.OtpVerificationRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -22,6 +23,7 @@ public class OtpService {
     private static final SecureRandom random = new SecureRandom();
 
     private final OtpVerificationRepository otpVerificationRepository;
+    private final SmsService smsService;
 
     /**
      * Generates a 6-digit OTP, hashes it, persists an {@code otp_verifications} row,
@@ -44,7 +46,7 @@ public class OtpService {
 
         return otpVerificationRepository.save(record)
                 .doOnSuccess(saved -> {
-                    // TODO: forward to payment-service SMS endpoint
+                    smsService.send(phoneNumber, String.format("Your OTP code is %s.", otp));
                     log.info("OTP for {} purpose={}: {}", phoneNumber, purpose, otp);
                 })
                 .then();

@@ -39,6 +39,10 @@ spring:
 file:
   upload-dir: ${FILE_UPLOAD_DIR:./uploads}
 
+payment:
+  service:
+    base-url: ${PAYMENT_SERVICE_URL:http://localhost:8092}
+
 services:
   wallet-service:
     url: ${WALLET_SERVICE_URL}

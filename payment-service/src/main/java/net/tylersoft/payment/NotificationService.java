@@ -15,7 +15,7 @@ public class NotificationService {
     private final SmsProperties smsProperties;
     private final ReactiveHttpClient httpClient;
     private final OutgoingRequestLogService logService;
-    private final SmsService smsService;
+//    private final SmsService smsService;
 
     public void sendSmsNotification(String phoneNumber, String message) {
 

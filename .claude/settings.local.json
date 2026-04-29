@@ -6,7 +6,8 @@
       "Bash(xargs grep *)",
       "Bash(xargs ls *)",
       "Bash(xargs cat *)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(xargs wc *)"
     ]
   }
 }

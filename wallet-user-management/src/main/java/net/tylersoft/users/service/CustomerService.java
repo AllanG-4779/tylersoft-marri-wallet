@@ -3,6 +3,7 @@ package net.tylersoft.users.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.tylersoft.common.http.dto.UniversalRequestWrapper;
+import net.tylersoft.common.notification.SmsService;
 import net.tylersoft.users.common.CustomerStatus;
 import net.tylersoft.users.common.OtpPurpose;
 import net.tylersoft.users.dto.*;
@@ -38,6 +39,7 @@ public class CustomerService {
     private final WalletServiceClient walletServiceClient;
     private final DeviceService deviceService;
     private final TransactionalOperator transactionalOperator;
+    private final SmsService smsService;
     @Value("${otp.demo.enabled:true}")
     private boolean demoEnabled;
     @Value("${otp.demo.value:636363}")
@@ -199,7 +201,13 @@ public class CustomerService {
                     }
 
                     return customerRepository.save(customer)
-                            .flatMap(saved -> shouldActivate ? createWalletFor(saved) : Mono.just(saved));
+                            .flatMap(saved -> shouldActivate ? createWalletFor(saved) : Mono.just(saved))
+                            .doOnNext(c -> {
+                                if (shouldActivate && CustomerStatus.ACTIVE.name().equals(c.getStatus())) {
+                                    smsService.send(c.getPhoneNumber(),
+                                            String.format("Welcome to Mari Wallet, %s! Your account has been activated. Start transacting today.", c.getFirstName()));
+                                }
+                            });
                 })
                 .flatMap(customer -> deviceService
                         .registerDevice(customer.getId(), channelInfo)

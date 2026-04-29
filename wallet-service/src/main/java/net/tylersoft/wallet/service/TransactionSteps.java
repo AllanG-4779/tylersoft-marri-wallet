@@ -10,6 +10,7 @@ import net.tylersoft.wallet.gateway.CardChargeRequest;
 import net.tylersoft.wallet.gateway.DeviceFingerprintRequest;
 import net.tylersoft.wallet.gateway.PaymentGatewayPort;
 import net.tylersoft.wallet.model.*;
+import net.tylersoft.common.notification.SmsService;
 import net.tylersoft.wallet.repository.*;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.reactive.TransactionalOperator;
@@ -56,6 +57,8 @@ public class TransactionSteps {
     private final TransactionChargeRepository transactionChargeRepository;
     private final TransactionalOperator transactionalOperator;
     private final SysServiceRepository sysServiceRepository;
+    private final SmsService smsService;
+    private final SmsTemplateRepository smsTemplateRepository;
 
     // ── Step 1: Staging ───────────────────────────────────────────────────────
 
@@ -263,6 +266,10 @@ public class TransactionSteps {
                 .then(debitBalance(debit, amount.add(totalCharge)))
                 .then(creditBalance(credit, amount))
                 .then(markSuccessful(ctx, totalCharge))
+                .flatMap(msg -> sendSms(msg, "SENDER", "SUCCESS", debit.getPhoneNumber(), debit.getAvailableBalance().toPlainString())
+                        .then(sendSms(msg, "RECEIVER", "SUCCESS", credit.getPhoneNumber(), credit.getAvailableBalance().toPlainString()))
+                        .onErrorResume(e -> { log.warn("SMS error ref={}", msg.getTransactionRef(), e); return Mono.empty(); })
+                        .thenReturn(msg))
                 .thenReturn(ctx.toBuilder()
                         .entries(List.of(drEntry, crEntry))
                         .build());
@@ -291,11 +298,31 @@ public class TransactionSteps {
             log.warn("Transaction failed ref={} code={} reason={}",
                     msg.getTransactionRef(), ctx.getFailureCode(), ctx.getFailureMessage());
 
-            return trxMessageRepository.save(msg).thenReturn(ctx);
+            return trxMessageRepository.save(msg)
+                    .flatMap(saved -> sendSms(saved, "SENDER", "FAILURE", saved.getPhoneNumber(), null)
+                            .onErrorResume(e -> { log.warn("SMS error ref={}", saved.getTransactionRef(), e); return Mono.empty(); })
+                            .thenReturn(ctx));
         };
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private Mono<Void> sendSms(TrxMessage msg, String direction, String status, String phone, String balance) {
+        if (phone == null) return Mono.empty();
+        return smsTemplateRepository
+                .findByTransactionTypeAndTransactionCodeAndDirectionAndStatus(
+                        msg.getTransactionType(), msg.getTransactionCode(), direction, status)
+                .doOnNext(t -> {
+                    String text = t.getTemplate()
+                            .replace("{amount}",    msg.getAmount() != null ? msg.getAmount().toPlainString() : "")
+                            .replace("{currency}",  msg.getCurrency() != null ? msg.getCurrency() : "")
+                            .replace("{ref}",       msg.getTransactionRef() != null ? msg.getTransactionRef() : "")
+                            .replace("{balance}",   balance != null ? balance : "")
+                            .replace("{recipient}", msg.getRecipientPhoneNumber() != null ? msg.getRecipientPhoneNumber() : "");
+                    smsService.send(phone, text);
+                })
+                .then();
+    }
 
     private BigDecimal computeCharge(ChargeConfig charge, BigDecimal amount) {
         return switch (charge.getValueType()) {
