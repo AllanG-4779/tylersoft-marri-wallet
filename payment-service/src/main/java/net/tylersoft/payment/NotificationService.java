@@ -28,9 +28,7 @@ public class NotificationService {
 
         logService.save(txId, "SMS", url, payload)
                 .flatMap(savedLog -> {
-                    Mono<String> sendMono = phoneNumber.startsWith("254")
-                            ? smsService.sendSms(phoneNumber, message)
-                            : httpClient.post(url, payload, String.class);
+                    Mono<String> sendMono = httpClient.post(url, payload, String.class);
 
                     return sendMono
                             .flatMap(resp -> logService.updateSuccess(savedLog.getId(), "OK", resp).thenReturn(resp))
