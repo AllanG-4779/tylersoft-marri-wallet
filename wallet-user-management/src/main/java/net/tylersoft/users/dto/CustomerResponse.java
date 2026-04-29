@@ -1,8 +1,10 @@
 package net.tylersoft.users.dto;
 
+import net.tylersoft.users.client.CustomerAccount;
 import net.tylersoft.users.model.Customer;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public record CustomerResponse(
@@ -12,9 +14,14 @@ public record CustomerResponse(
         String phoneNumber,
         String email,
         String status,
-        OffsetDateTime createdAt
+        OffsetDateTime createdAt,
+        List<CustomerAccount> accounts
 ) {
     public static CustomerResponse from(Customer c) {
+        return from(c, List.of());
+    }
+
+    public static CustomerResponse from(Customer c, List<CustomerAccount> accounts) {
         return new CustomerResponse(
                 c.getId(),
                 c.getFirstName(),
@@ -22,7 +29,8 @@ public record CustomerResponse(
                 c.getPhoneNumber(),
                 c.getEmail(),
                 c.getStatus(),
-                c.getCreatedAt()
+                c.getCreatedAt(),
+                accounts
         );
     }
 }
