@@ -65,6 +65,18 @@ intercape:
   client-id: ${INTERCAPE_CLIENT_ID}
   service-id: ${INTERCAPE_SERVICE_ID:1006}
 
+ott:
+  base-url: ${OTT_BASE_URL:https://test-api.ottbotswana.com}
+  voucher-endpoint: /api/reseller/v1/GetVoucher
+  username: ${OTT_USERNAME}
+  password: ${OTT_PASSWORD}
+  secret-key: ${OTT_SECRET_KEY}
+  merchant-id: ${OTT_MERCHANT_ID}
+  branch: ${OTT_BRANCH}
+  cashier: ${OTT_CASHIER:MARI WALLET}
+  till: ${OTT_TILL}
+  vendor-code: ${OTT_VENDOR_CODE}
+
 billing:
   base-url: ${BILLING_BASE_URL}
   default-base-url: /v2/api/send

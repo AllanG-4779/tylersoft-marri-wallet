@@ -3,12 +3,14 @@ package net.tylersoft.users.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
 @Configuration
 @EnableWebFluxSecurity
+@EnableReactiveMethodSecurity
 public class SecurityConfig {
 
     @Bean
@@ -16,13 +18,14 @@ public class SecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(auth -> auth
-                        // Registration and OTP are public (no token yet at sign-up time)
                         .pathMatchers(
                                 "/api/v2/users/register",
                                 "/api/v2/users/verify-otp",
                                 "/api/v2/users/resend-otp",
                                 "/api/v2/users/lookup",
                                 "/api/v2/users/set-pin",
+                                "/api/v2/merchants/register",
+                                "/api/v2/merchants/lookup/**",
                                 "/actuator/health",
                                 "/actuator/info"
                         ).permitAll()

@@ -23,8 +23,15 @@ public record CreateWalletAccountRequest(
     public static CreateWalletAccountRequest of(String phoneNumber,
                                                 String accountName,
                                                 String currency) {
+        return of(phoneNumber, accountName, currency, "TA");
+    }
+
+    public static CreateWalletAccountRequest of(String phoneNumber,
+                                                String accountName,
+                                                String currency,
+                                                String prefix) {
         return new CreateWalletAccountRequest(
-                new AccountData(currency, "TA", phoneNumber, accountName, BigDecimal.ZERO),
+                new AccountData(currency, prefix, phoneNumber, accountName, BigDecimal.ZERO),
                 new ChannelDetails("wallet-user-management")
         );
     }

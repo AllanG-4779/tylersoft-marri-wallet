@@ -7,7 +7,13 @@
       "Bash(xargs ls *)",
       "Bash(xargs cat *)",
       "Bash(python3 -c ' *)",
-      "Bash(xargs wc *)"
+      "Bash(xargs wc *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\USER\\\\IdeaProjects\\\\tylersoft-mari-wallet\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\USER\\\\IdeaProjects\\\\tylersoft-mari-wallet\\\\wallet-service\\\\src\\\\main\\\\java\\\\net\\\\tylersoft\\\\wallet\\\\service\" -Filter \"*Service.java\")",
+      "Bash(Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Recurse -Path \"C:\\\\Users\\\\USER\\\\IdeaProjects\\\\tylersoft-mari-wallet\" -Filter \"build.gradle\" | ForEach-Object { $_.FullName })",
+      "PowerShell(Get-ChildItem -Recurse -Path \"C:\\\\Users\\\\USER\\\\IdeaProjects\\\\tylersoft-mari-wallet\" -Filter \"pom.xml\" | ForEach-Object { $_.FullName })"
     ]
   }
 }

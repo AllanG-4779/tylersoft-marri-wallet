@@ -33,7 +33,20 @@ public class WalletServiceClient {
     public Mono<WalletAccountResponse> createWalletAccount(String phoneNumber,
                                                            String accountName,
                                                            String currency) {
-        CreateWalletAccountRequest body = CreateWalletAccountRequest.of(phoneNumber, accountName, currency);
+        return createAccount(phoneNumber, accountName, currency, "TA");
+    }
+
+    public Mono<WalletAccountResponse> createMerchantAccount(String businessPhone,
+                                                              String businessName,
+                                                              String currency) {
+        return createAccount(businessPhone, businessName, currency, "MA");
+    }
+
+    private Mono<WalletAccountResponse> createAccount(String phoneNumber,
+                                                       String accountName,
+                                                       String currency,
+                                                       String prefix) {
+        CreateWalletAccountRequest body = CreateWalletAccountRequest.of(phoneNumber, accountName, currency, prefix);
         return httpClient.post(
                 walletServiceUrl + ACCOUNTS_PATH,
                 Map.of("Authorization", basicAuth(serviceUsername, servicePassword)),

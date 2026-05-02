@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import net.tylersoft.wallet.airtime.AirtimePurchaseRequest;
 import net.tylersoft.wallet.airtime.AirtimeService;
 import net.tylersoft.wallet.common.FTRequest;
+import net.tylersoft.wallet.ott.OttVoucherPurchaseRequest;
+import net.tylersoft.wallet.ott.OttVoucherService;
 import net.tylersoft.wallet.model.Account;
 import net.tylersoft.wallet.model.ChargeConfig;
 import net.tylersoft.wallet.repository.AccountRepository;
@@ -35,6 +37,7 @@ public class QuoteService {
     private final TransactionQuoteRepository quoteRepository;
     private final FundTransferService fundTransferService;
     private final AirtimeService airtimeService;
+    private final OttVoucherService ottVoucherService;
 
     public Mono<QuoteResponse> enquire(Jwt jwt, TransactionEnquiryRequest req) {
         String callerPhone = jwt.getClaimAsString("phone");
@@ -165,6 +168,7 @@ public class QuoteService {
         return Mono.just("");
     }
 
+
     private Mono<Boolean> revalidateFees(TransactionQuote quote) {
         return sysServiceRepository.findByTransactionType(quote.getTransactionType())
                 .switchIfEmpty(Mono.error(new IllegalStateException(
@@ -226,6 +230,21 @@ public class QuoteService {
                                 resp.status(),
                                 resp.message()));
             }
+            case "OTT_VOUCHER" -> {
+                OttVoucherPurchaseRequest ottReq = new OttVoucherPurchaseRequest(
+                        quote.getDebitAccount(),
+                        quote.getRecipientPhone(),
+                        quote.getAmount().doubleValue(),
+                        quote.getCurrency(),
+                        quote.getPhoneNumber()
+                );
+                yield ottVoucherService.purchase(ottReq)
+                        .map(resp -> new ConfirmResponse(
+                                resp.reference(),
+                                resp.pin(),
+                                resp.status(),
+                                resp.message()));
+            }
             default -> Mono.error(new IllegalArgumentException(
                     "Unsupported transaction type: " + quote.getTransactionType()));
         };
@@ -252,6 +271,8 @@ public class QuoteService {
                     req.currency(), req.amount(), recipientName, req.creditAccount(), fee, totalDebit);
             case "AIRTIME" -> String.format("Buy %s %.2f %s airtime for %s. Fee: %s. Total deducted: %s.",
                     req.currency(), req.amount(), req.transactionCode(), req.recipientPhone(), fee, totalDebit);
+            case "OTT_VOUCHER" -> String.format("Buy OTT e-voucher of %s %.2f for %s. Fee: %s. Total deducted: %s.",
+                    req.currency(), req.amount(), req.recipientPhone(), fee, totalDebit);
             default -> String.format("%s %s %.2f. Fee: %s. Total: %s.",
                     req.transactionType(), req.currency(), req.amount(), fee, totalDebit);
         };

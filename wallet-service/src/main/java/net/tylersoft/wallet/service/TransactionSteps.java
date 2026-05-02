@@ -6,6 +6,8 @@ import net.tylersoft.wallet.charge.ChargeValueType;
 import net.tylersoft.wallet.common.TransactionStatus;
 import net.tylersoft.wallet.airtime.AirtimeGatewayPort;
 import net.tylersoft.wallet.airtime.AirtimeGatewayRequest;
+import net.tylersoft.wallet.ott.OttVoucherGatewayPort;
+import net.tylersoft.wallet.ott.OttVoucherGatewayRequest;
 import net.tylersoft.wallet.gateway.CardChargeRequest;
 import net.tylersoft.wallet.gateway.DeviceFingerprintRequest;
 import net.tylersoft.wallet.gateway.PaymentGatewayPort;
@@ -610,6 +612,33 @@ public class TransactionSteps {
                     .onErrorResume(ex -> {
                         log.error("Airtime gateway error ref={}", msg.getTransactionRef(), ex);
                         return Mono.just(ctx.withFailure("AT01", "Airtime gateway error: " + ex.getMessage()));
+                    });
+        };
+    }
+
+    public TransactionStep initiateOttVoucher(OttVoucherGatewayPort gateway) {
+        return ctx -> {
+            var msg = ctx.getStagedMessage();
+            OttVoucherGatewayRequest req = new OttVoucherGatewayRequest(
+                    msg.getTransactionRef(),
+                    msg.getRecipientPhoneNumber(),
+                    msg.getAmount(),
+                    msg.getCurrency()
+            );
+            return gateway.purchase(req)
+                    .flatMap(result -> {
+                        if (result.success()) {
+                            log.info("OTT voucher dispensed ref={} pin={}",
+                                    msg.getTransactionRef(), result.pin());
+                            msg.setReceiptNumber(result.pin());
+                            return trxMessageRepository.save(msg).thenReturn(ctx.toBuilder().stagedMessage(msg).build());
+                        }
+                        log.warn("OTT voucher failed ref={} code={}", msg.getTransactionRef(), result.responseCode());
+                        return Mono.just(ctx.withFailure(result.responseCode(), result.responseMessage()));
+                    })
+                    .onErrorResume(ex -> {
+                        log.error("OTT voucher gateway error ref={}", msg.getTransactionRef(), ex);
+                        return Mono.just(ctx.withFailure("OT01", "OTT gateway error: " + ex.getMessage()));
                     });
         };
     }

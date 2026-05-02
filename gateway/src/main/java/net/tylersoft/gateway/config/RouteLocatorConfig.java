@@ -20,6 +20,10 @@ public class RouteLocatorConfig {
                 .route("user-service", r -> r
                         .path("/api/v2/users/**")
                         .uri("lb://wallet-user-service"))
+                // Merchant management (public + admin)
+                .route("merchant-service", r -> r
+                        .path("/api/v2/merchants/**", "/api/v1/admin/merchants/**")
+                        .uri("lb://wallet-user-service"))
                 // Wallet: accounts, transactions, top-up, config
                 .route("wallet-service", r -> r
                         .path("/api/v2/accounts/**",
@@ -28,11 +32,12 @@ public class RouteLocatorConfig {
                               "/api/v2/airtime/**",
                               "/api/v2/config/**")
                         .uri("lb://wallet-service"))
-                // Payment: billing, intercape, third-party
+                // Payment: billing, intercape, card, OTT, third-party
                 .route("payment-service", r -> r
                         .path("/api/v1/billing/**",
                               "/api/v1/intercape/**",
                               "/api/v1/card/**",
+                              "/api/v1/ott/**",
                               "/api/v1/third-party/**")
                         .uri("lb://payment-service"))
                 .build();
