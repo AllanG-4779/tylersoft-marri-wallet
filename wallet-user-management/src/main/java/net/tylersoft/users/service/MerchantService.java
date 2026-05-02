@@ -79,7 +79,7 @@ public class MerchantService {
 
     private Mono<Void> saveDocuments(UUID merchantId, ServerWebExchange exchange) {
         return exchange.getMultipartData()
-                .flatMapMany(parts -> Flux.fromIterable(parts.entries())
+                .flatMapMany(parts -> Flux.fromIterable(parts.entrySet())
                         .filter(e -> e.getValue() instanceof FilePart)
                         .flatMap(entry -> {
                             FilePart file = (FilePart) entry.getValue();
