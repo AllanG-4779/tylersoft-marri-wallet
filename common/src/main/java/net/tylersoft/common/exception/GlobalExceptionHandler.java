@@ -5,6 +5,7 @@ import net.tylersoft.common.exception.exceptions.UnauthorizedException;
 import net.tylersoft.common.http.dto.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -81,4 +82,11 @@ public class GlobalExceptionHandler {
         log.error("Unhandled exception", ex);
         return Mono.just(ApiResponse.error(ex.getMessage()));
     }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public Mono<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
+        return Mono.just(ApiResponse.error("You don't have the required permissions to access this resource"));
+    }
+
 }

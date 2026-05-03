@@ -189,11 +189,13 @@ public class CustomerService {
                 .filter(customer -> !CustomerStatus.INITIATED.name().equals(customer.getStatus()))
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("Phone number must be verified before setting a PIN")))
                 .flatMap(customer -> {
+                    String originalStatus = customer.getStatus();
+
                     customer.setPinHash(pinEncoder.encode(request.pin()));
                     customer.setUpdatedAt(OffsetDateTime.now());
 
-                    boolean shouldActivate = CustomerStatus.DOCUMENTS_UPLOADED.name().equals(customer.getStatus())
-                            || CustomerStatus.KYC_VERIFIED.name().equals(customer.getStatus());
+                    boolean shouldActivate = CustomerStatus.DOCUMENTS_UPLOADED.name().equals(originalStatus)
+                            || CustomerStatus.KYC_VERIFIED.name().equals(originalStatus);
 
                     if (shouldActivate) {
                         customer.setStatus(CustomerStatus.ACTIVE.name());
@@ -201,7 +203,7 @@ public class CustomerService {
                     }
 
                     return customerRepository.save(customer)
-                            .flatMap(saved -> shouldActivate ? createWalletFor(saved) : Mono.just(saved))
+                            .flatMap(saved -> shouldActivate ? createWalletFor(saved, originalStatus) : Mono.just(saved))
                             .doOnNext(c -> {
                                 if (shouldActivate && CustomerStatus.ACTIVE.name().equals(c.getStatus())) {
                                     smsService.send(c.getPhoneNumber(),
@@ -215,20 +217,23 @@ public class CustomerService {
                 .map(CustomerResponse::from);
     }
 
-    public Mono<Customer> createWalletFor(Customer customer) {
+    public Mono<Customer> createWalletFor(Customer customer, String originalStatus) {
         String accountName = customer.getFirstName() + " " + customer.getLastName();
         return walletServiceClient
                 .createWalletAccount(customer.getPhoneNumber(), accountName, "KES")
                 .doOnSuccess(accountNo -> log.info(
                         "Wallet account opened: customerId={} accountNo={}", customer.getId(), accountNo))
-                .thenReturn(customer) // ← keeps return type as Mono<Customer>
+                .thenReturn(customer)
                 .onErrorResume(err -> {
-                    log.error("Wallet account creation failed for customerId={}: {}",
+                    log.error("Wallet account creation failed for customerId={}, reverting PIN and status: {}",
                             customer.getId(), err.getMessage());
-                    customer.setStatus(CustomerStatus.WALLET_CREATION_FAILED.name());
+                    customer.setPinHash(null);
+                    customer.setStatus(originalStatus);
                     customer.setStatusChangedAt(OffsetDateTime.now());
                     customer.setStatusReason(err.getMessage().substring(0, Math.min(err.getMessage().length(), 100)));
-                    return customerRepository.save(customer);
+                    customer.setUpdatedAt(OffsetDateTime.now());
+                    return customerRepository.save(customer)
+                            .flatMap(saved -> Mono.error(err));
                 });
     }
 

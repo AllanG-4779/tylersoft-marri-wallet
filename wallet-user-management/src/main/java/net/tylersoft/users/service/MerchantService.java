@@ -16,6 +16,9 @@ import net.tylersoft.users.model.Merchant;
 import net.tylersoft.users.model.MerchantDocument;
 import net.tylersoft.users.repository.MerchantDocumentRepository;
 import net.tylersoft.users.repository.MerchantRepository;
+import net.tylersoft.common.http.dto.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Service;
@@ -45,6 +48,7 @@ public class MerchantService {
     // ── Registration ──────────────────────────────────────────────────────────
 
     public Mono<MerchantResponse> register(MerchantRegistrationRequest req,
+                                           String createdBy,
                                            ServerWebExchange exchange) {
         return Mono.zip(
                 merchantRepository.existsByBusinessEmail(req.businessEmail()),
@@ -66,7 +70,7 @@ public class MerchantService {
             merchant.setTaxNumber(req.taxNumber());
             merchant.setAddress(req.address());
             merchant.setStatus(MerchantStatus.PENDING_REVIEW.name());
-            merchant.setCreatedBy("self");
+            merchant.setCreatedBy(createdBy);
             merchant.setStatusChangedAt(OffsetDateTime.now());
             merchant.setCreatedAt(OffsetDateTime.now());
             merchant.setUpdatedAt(OffsetDateTime.now());
@@ -115,14 +119,20 @@ public class MerchantService {
 
     // ── Admin: list ───────────────────────────────────────────────────────────
 
-    public Flux<MerchantResponse> listAll() {
-        return merchantRepository.findAllByOrderByCreatedAtDesc()
-                .map(MerchantResponse::from);
+    public Mono<Page<MerchantResponse>> listAll(int page, int size) {
+        var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return Mono.zip(
+                merchantRepository.findAllByOrderByCreatedAtDesc(pageable).map(MerchantResponse::from).collectList(),
+                merchantRepository.count()
+        ).map(t -> Page.of(t.getT1(), page, size, t.getT2()));
     }
 
-    public Flux<MerchantResponse> listByStatus(String status) {
-        return merchantRepository.findAllByStatus(status)
-                .map(MerchantResponse::from);
+    public Mono<Page<MerchantResponse>> listByStatus(String status, int page, int size) {
+        var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return Mono.zip(
+                merchantRepository.findAllByStatusOrderByCreatedAtDesc(status, pageable).map(MerchantResponse::from).collectList(),
+                merchantRepository.countByStatus(status)
+        ).map(t -> Page.of(t.getT1(), page, size, t.getT2()));
     }
 
     // ── Admin: approve ────────────────────────────────────────────────────────
@@ -302,6 +312,6 @@ public class MerchantService {
                 .sql("SELECT nextval('users.merchant_code_seq')")
                 .map((row, meta) -> row.get(0, Long.class))
                 .first()
-                .map(n -> String.format("MER%06d", n));
+                .map(n -> String.format("MER%05d", n));
     }
 }

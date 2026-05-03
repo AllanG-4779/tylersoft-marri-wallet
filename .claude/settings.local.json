@@ -13,7 +13,9 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\USER\\\\IdeaProjects\\\\tylersoft-mari-wallet\\\\wallet-service\\\\src\\\\main\\\\java\\\\net\\\\tylersoft\\\\wallet\\\\service\" -Filter \"*Service.java\")",
       "Bash(Select-Object FullName)",
       "PowerShell(Get-ChildItem -Recurse -Path \"C:\\\\Users\\\\USER\\\\IdeaProjects\\\\tylersoft-mari-wallet\" -Filter \"build.gradle\" | ForEach-Object { $_.FullName })",
-      "PowerShell(Get-ChildItem -Recurse -Path \"C:\\\\Users\\\\USER\\\\IdeaProjects\\\\tylersoft-mari-wallet\" -Filter \"pom.xml\" | ForEach-Object { $_.FullName })"
+      "PowerShell(Get-ChildItem -Recurse -Path \"C:\\\\Users\\\\USER\\\\IdeaProjects\\\\tylersoft-mari-wallet\" -Filter \"pom.xml\" | ForEach-Object { $_.FullName })",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\USER\\\\IdeaProjects\\\\tylersoft-mari-wallet\" -Recurse -Directory)",
+      "Bash(Select-Object -First 20 FullName)"
     ]
   }
 }
