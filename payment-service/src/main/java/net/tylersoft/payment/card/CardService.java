@@ -1,6 +1,7 @@
 package net.tylersoft.payment.card;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.tylersoft.payment.card.api.CardDeviceDataRequest;
 import net.tylersoft.payment.card.api.CardPaymentRequest;
 import net.tylersoft.payment.card.dto.*;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CardService {
@@ -24,6 +26,7 @@ public class CardService {
     private final TcpProperties props;
 
     public Mono<TcpDeviceDataResponse> deviceDataCollection(CardDeviceDataRequest req) {
+        log.info("Received device fingerprint request {}", req);
         String timestamp = LocalDateTime.now().format(TIMESTAMP_FMT);
         String currency = req.currency() != null ? req.currency() : props.getCurrency();
         String country = req.country() != null ? req.country() : props.getCountry();
