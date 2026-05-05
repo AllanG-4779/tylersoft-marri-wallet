@@ -6,6 +6,8 @@ import net.tylersoft.wallet.charge.ChargeValueType;
 import net.tylersoft.wallet.common.TransactionStatus;
 import net.tylersoft.wallet.airtime.AirtimeGatewayPort;
 import net.tylersoft.wallet.airtime.AirtimeGatewayRequest;
+import net.tylersoft.wallet.ott.OttRedemptionGatewayPort;
+import net.tylersoft.wallet.ott.OttRemitGatewayRequest;
 import net.tylersoft.wallet.ott.OttVoucherGatewayPort;
 import net.tylersoft.wallet.ott.OttVoucherGatewayRequest;
 import net.tylersoft.wallet.gateway.CardChargeRequest;
@@ -639,6 +641,54 @@ public class TransactionSteps {
                     .onErrorResume(ex -> {
                         log.error("OTT voucher gateway error ref={}", msg.getTransactionRef(), ex);
                         return Mono.just(ctx.withFailure("OT01", "OTT gateway error: " + ex.getMessage()));
+                    });
+        };
+    }
+
+    /**
+     * Calls the OTT Redemption API to remit (redeem) a voucher PIN.
+     * On success, updates the staged message amount with the actual {@code voucherAmount}
+     * returned by OTT (needed when amount=0 was staged for full-value redemption).
+     * On failure, marks the context failed — {@code post()} is skipped, wallet untouched.
+     *
+     * @param gateway    OTT redemption gateway port
+     * @param voucherPin the voucher PIN supplied by the user
+     */
+    public TransactionStep initiateOttRedemption(OttRedemptionGatewayPort gateway, String voucherPin) {
+        return ctx -> {
+            var msg = ctx.getStagedMessage();
+            var req = ctx.getRequest();
+
+            OttRemitGatewayRequest remitReq = new OttRemitGatewayRequest(
+                    null,
+                    String.format("%.2f", req.getAmount()),
+                    null,
+                    req.getPhoneNumber(),
+                    voucherPin,
+                    msg.getTransactionRef()
+            );
+
+            return gateway.remitVoucher(remitReq)
+                    .flatMap(result -> {
+                        if (result.success()) {
+                            BigDecimal voucherAmount = new BigDecimal(result.voucherAmount());
+                            log.info("OTT redemption successful ref={} amount={} balance={}",
+                                    msg.getTransactionRef(), voucherAmount, result.voucherBalance());
+                            // Update amount so post() uses the actual redeemed value
+                            msg.setAmount(voucherAmount);
+                            req.setAmount(voucherAmount.doubleValue());
+                            return trxMessageRepository.save(msg)
+                                    .thenReturn(ctx.toBuilder().stagedMessage(msg).build());
+                        }
+                        log.warn("OTT redemption failed ref={} code={} msg={}",
+                                msg.getTransactionRef(), result.errorCode(), result.message());
+                        String code = result.errorCode() != null ? "OTR" + result.errorCode() : "OTR00";
+                        String detail = result.message() != null ? result.message() : "OTT redemption failed";
+                        return Mono.just(ctx.withFailure(code, detail));
+                    })
+                    .onErrorResume(ex -> {
+                        log.error("OTT redemption gateway error ref={}", msg.getTransactionRef(), ex);
+                        return Mono.just(ctx.withFailure("OTR01", "OTT redemption error: " + ex.getMessage()));
                     });
         };
     }

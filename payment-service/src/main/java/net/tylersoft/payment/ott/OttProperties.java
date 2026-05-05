@@ -19,4 +19,11 @@ public class OttProperties {
     private String cashier;
     private String till;
     private String vendorCode;
+
+    // Redemption API
+    private int    vendorId;
+    private String apiKey;
+    private String checkVoucherEndpoint    = "/api/v1/CheckVoucher";
+    private String remitVoucherEndpoint    = "/api/v1/RemitVoucher";
+    private String checkRemitVoucherEndpoint = "/api/v1/CheckRemitVoucher";
 }

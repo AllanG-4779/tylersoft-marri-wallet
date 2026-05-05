@@ -76,6 +76,11 @@ ott:
   cashier: ${OTT_CASHIER:MARI WALLET}
   till: ${OTT_TILL}
   vendor-code: ${OTT_VENDOR_CODE}
+  vendor-id: ${OTT_VENDOR_ID:11}
+  api-key: ${OTT_API_KEY}
+  check-voucher-endpoint: /api/v1/CheckVoucher
+  remit-voucher-endpoint: /api/v1/RemitVoucher
+  check-remit-voucher-endpoint: /api/v1/CheckRemitVoucher
 
 billing:
   base-url: ${BILLING_BASE_URL}
