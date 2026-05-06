@@ -28,6 +28,7 @@ public class PaymentServiceOttRedemptionGateway implements OttRedemptionGatewayP
                 .bodyValue(Map.of("voucherPin", voucherPin))
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<WsCheckVoucherApiResponse>() {})
+
                 .map(resp -> {
                     WsCheckVoucherData d = resp.data();
                     boolean ok = "00".equals(resp.status()) && d != null && d.success();
@@ -40,6 +41,7 @@ public class PaymentServiceOttRedemptionGateway implements OttRedemptionGatewayP
                             d != null ? d.message()    : (resp.error() != null ? resp.error() : resp.message()),
                             d != null ? d.errorCode()  : null);
                 })
+                .switchIfEmpty(Mono.error(new IllegalStateException("Empty response from OTT gateway")))
                 .onErrorResume(ex -> {
                     log.error("OTT check voucher gateway error", ex);
                     return Mono.just(new OttCheckVoucherGatewayResult(

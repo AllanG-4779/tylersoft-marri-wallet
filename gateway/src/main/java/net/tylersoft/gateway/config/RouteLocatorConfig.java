@@ -24,13 +24,14 @@ public class RouteLocatorConfig {
                 .route("merchant-service", r -> r
                         .path("/api/v2/merchants/**", "/api/v1/admin/merchants/**")
                         .uri("lb://wallet-user-service"))
-                // Wallet: accounts, transactions, top-up, config
+                // Wallet: accounts, transactions, top-up, config, OTT redemption
                 .route("wallet-service", r -> r
                         .path("/api/v2/accounts/**",
                               "/api/v2/transactions/**",
                               "/api/v2/topup/**",
                               "/api/v2/airtime/**",
-                              "/api/v2/config/**")
+                              "/api/v2/config/**",
+                              "/api/v1/ott/redeem")
                         .uri("lb://wallet-service"))
                 // Payment: billing, intercape, card, OTT, third-party
                 .route("payment-service", r -> r
