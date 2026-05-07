@@ -67,12 +67,12 @@ public class PaymentServiceGateway implements PaymentGatewayPort {
                     String code = tcp.statuscode();
                     String msg = tcp.message();
                     log.info("Card charge response tranid={} statuscode={}", req.esbRef(), code);
-                    return new CardChargeResult(success, code, msg, req.esbRef());
+                    return new CardChargeResult(success, code, msg, req.esbRef(), tcp.pareq(), tcp.accessToken(), tcp.pastepup());
                 })
                 .onErrorResume(ex -> {
                     log.error("Card charge call failed tranid={}", req.esbRef(), ex);
                     return Mono.just(new CardChargeResult(
-                            false, "PG99", "Payment gateway error: " + ex.getMessage(), null));
+                            false, "PG99", "Payment gateway error: " + ex.getMessage(), null, null, null, null));
                 });
     }
 
@@ -83,7 +83,7 @@ public class PaymentServiceGateway implements PaymentGatewayPort {
         if (year.length() == 2) year = "20" + year;
 
         String[] names = orDefault(req.cardholderName(), "John Doe").split(" ", 2);
-        String firstname  = names[0];
+        String firstname = names[0];
         String secondname = names.length > 1 ? names[1] : "";
 
         // Payment service expects local phone format — strip Botswana country code if present

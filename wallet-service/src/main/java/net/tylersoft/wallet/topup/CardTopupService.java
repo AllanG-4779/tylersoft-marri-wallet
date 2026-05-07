@@ -145,14 +145,20 @@ public class CardTopupService {
                     return paymentGateway.charge(chargeReq)
                             .flatMap(result -> {
                                 if (result.success()) {
+                                    var authRequired = result.responseMessage().contains("PENDING_AUTHENTICATION");
                                     return steps.asyncUpdateStatus(msg.getId(),
                                                     TransactionStatus.CALLBACK_WAIT,
                                                     result.responseCode(), result.responseMessage())
                                             .thenReturn(new CardTopupInitiateResponse(
                                                     String.valueOf(msg.getId()),
                                                     msg.getTransactionRef(),
-                                                    TransactionStatus.CALLBACK_WAIT.name(),
-                                                    "Card charge initiated. Awaiting payment gateway callback."
+                                                    result.responseMessage(),
+                                                    authRequired ?
+                                                            "You will be redirected to an external page to complete the authorizing the transaction" : "Transaction accepted for processing",
+                                                    result.accessToken(),
+                                                    result.pasteUrl(),
+                                                    authRequired
+
                                             ));
                                 }
                                 log.warn("PG charge rejected esbRef={} code={}", msg.getTransactionRef(), result.responseCode());
@@ -162,8 +168,8 @@ public class CardTopupService {
                                         .thenReturn(new CardTopupInitiateResponse(
                                                 null, null,
                                                 TransactionStatus.FAILED.name(),
-                                                result.responseCode() + " - " + result.responseMessage()
-                                        ));
+                                                result.responseCode() + " - " + result.responseMessage(),
+                                                null, null, false));
                             })
                             .onErrorResume(ex -> {
                                 log.error("Card charge error esbRef={}", msg.getTransactionRef(), ex);
@@ -173,7 +179,7 @@ public class CardTopupService {
                                         .thenReturn(new CardTopupInitiateResponse(
                                                 null, null,
                                                 TransactionStatus.FAILED.name(),
-                                                "PG01 - Payment gateway error"
+                                                "PG01 - Payment gateway error", null, null, false
                                         ));
                             });
                 });

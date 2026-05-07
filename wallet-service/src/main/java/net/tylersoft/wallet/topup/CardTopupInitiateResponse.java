@@ -4,5 +4,8 @@ public record CardTopupInitiateResponse(
         String esbRef,
         String transactionRef,
         String status,
-        String message
+        String message,
+        String accessToken,
+        String redirectUrl,
+        boolean authorizationRequired
 ) {}
