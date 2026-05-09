@@ -23,7 +23,13 @@ public class OttVoucherRedemptionController {
             @RequestBody UniversalRequestWrapper<OttRedeemRequest> body) {
         String phoneNumber = jwt.getClaimAsString("phone");
         return redemptionService.redeem(phoneNumber, body.data())
-                .map(ApiResponse::ok)
+                .map(each -> {
+                    if (each.status().equals("SUCCESS")) {
+                        return ApiResponse.ok("Voucher redeemed successfully", each);
+                    } else {
+                        return ApiResponse.error("Voucher redemption failed: " + each.message(), each);
+                    }
+                })
                 .onErrorResume(ex -> Mono.just(ApiResponse.error(ex.getMessage())));
     }
 }
