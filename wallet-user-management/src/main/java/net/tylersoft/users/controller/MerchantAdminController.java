@@ -62,39 +62,25 @@ public class MerchantAdminController {
         return merchantService.getById(merchantId).map(ApiResponse::ok);
     }
 
-    @PostMapping("/{merchantId}/approve")
-   
-    public Mono<ApiResponse<MerchantResponse>> approve(
+    @PostMapping("/{merchantId}/review")
+    public Mono<ApiResponse<MerchantResponse>> review(
             @PathVariable UUID merchantId,
+            @RequestBody UniversalRequestWrapper<MerchantReviewRequest> request,
             @AuthenticationPrincipal Jwt jwt) {
         String admin = jwt.getClaimAsString("username");
-        return merchantService.approve(merchantId, admin)
-                .map(r -> ApiResponse.ok("Merchant approved and MA account created", r));
+        MerchantReviewRequest review = request.data();
+        return switch (review.action().toUpperCase()) {
+            case "APPROVE" -> merchantService.approve(merchantId, admin)
+                    .map(r -> ApiResponse.ok("Merchant approved and MA account created", r));
+            case "REJECT" -> merchantService.reject(merchantId, review.reason(), admin)
+                    .map(r -> ApiResponse.ok("Merchant rejected", r));
+            case "SUSPEND" -> merchantService.suspend(merchantId, review.reason(), admin)
+                    .map(r -> ApiResponse.ok("Merchant suspended", r));
+            default -> Mono.error(new IllegalArgumentException("action must be APPROVE, REJECT, or SUSPEND"));
+        };
     }
 
-    @PostMapping("/{merchantId}/reject")
-   
-    public Mono<ApiResponse<MerchantResponse>> reject(
-            @PathVariable UUID merchantId,
-            @RequestBody UniversalRequestWrapper<MerchantStatusUpdateRequest> request,
-            @AuthenticationPrincipal Jwt jwt) {
-        String admin = jwt.getClaimAsString("username");
-        return merchantService.reject(merchantId, request.data().reason(), admin)
-                .map(r -> ApiResponse.ok("Merchant rejected", r));
-    }
-
-    @PostMapping("/{merchantId}/suspend")
-   
-    public Mono<ApiResponse<MerchantResponse>> suspend(
-            @PathVariable UUID merchantId,
-            @RequestBody UniversalRequestWrapper<MerchantStatusUpdateRequest> request,
-            @AuthenticationPrincipal Jwt jwt) {
-        String admin = jwt.getClaimAsString("username");
-        return merchantService.suspend(merchantId, request.data().reason(), admin)
-                .map(r -> ApiResponse.ok("Merchant suspended", r));
-    }
-
-    @PostMapping("/{merchantId}/reactivate")
+@PostMapping("/{merchantId}/reactivate")
    
     public Mono<ApiResponse<MerchantResponse>> reactivate(
             @PathVariable UUID merchantId,
