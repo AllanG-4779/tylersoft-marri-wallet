@@ -23,4 +23,8 @@ public record ApiResponse<T>(
     public static <T> ApiResponse<T> error(String error, T data) {
         return new ApiResponse<>("01", error, data, error);
     }
+
+    public static <T> ApiResponse<T> error(String message, String error, T data) {
+        return new ApiResponse<>("01", message, data, error);
+    }
 }

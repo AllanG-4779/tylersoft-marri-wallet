@@ -36,7 +36,7 @@ public class QuoteController {
             @RequestBody UniversalRequestWrapper<ConfirmRequest> body) {
         return quoteService.confirm(jwt, body.data())
                 .map(result -> "FAILED".equalsIgnoreCase(result.status())
-                        ? ApiResponse.error(result.message(), result)
+                        ? ApiResponse.error("Transaction failed. Please try again.", result.message(), result)
                         : ApiResponse.ok(result))
                 .onErrorResume(ex -> Mono.just(ApiResponse.error(ex.getMessage())));
     }
