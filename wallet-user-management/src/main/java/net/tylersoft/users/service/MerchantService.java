@@ -240,30 +240,26 @@ public class MerchantService {
 
     // ── QR code generation (dynamic — not persisted) ─────────────────────────
 
-    public Mono<MerchantQrResponse> generateQr(UUID merchantId, MerchantQrRequest req) {
+    public Mono<MerchantQrResponse> generateQr(UUID merchantId) {
         return merchantRepository.findById(merchantId)
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("Merchant not found: " + merchantId)))
                 .flatMap(merchant -> {
                     if (!MerchantStatus.ACTIVE.name().equals(merchant.getStatus()))
                         return Mono.error(new IllegalArgumentException(
                                 "QR codes can only be generated for ACTIVE merchants"));
-                    if (merchant.getAccountNumber() == null)
-                        return Mono.error(new IllegalArgumentException(
-                                "Merchant account not yet created"));
-                    return buildQrCode(merchant, req);
+                    return buildQrCode(merchant);
                 });
     }
 
-    private Mono<MerchantQrResponse> buildQrCode(Merchant merchant, MerchantQrRequest req) {
+    private Mono<MerchantQrResponse> buildQrCode(Merchant merchant) {
         return Mono.fromCallable(() -> {
             try {
                 Map<String, Object> payload = new LinkedHashMap<>();
                 payload.put("merchantCode", merchant.getMerchantCode());
                 payload.put("merchantName", merchant.getBusinessName());
                 payload.put("businessPhone", merchant.getBusinessPhone());
-                payload.put("accountNumber", merchant.getAccountNumber());
-                if (req != null && req.fixedAmount() != null)
-                    payload.put("amount", req.fixedAmount());
+                if (merchant.getAccountNumber() != null)
+                    payload.put("accountNumber", merchant.getAccountNumber());
 
                 String qrData = objectMapper.writeValueAsString(payload);
                 String imageBase64 = encodeToBase64Png(qrData, 300);
@@ -273,8 +269,6 @@ public class MerchantService {
                         merchant.getBusinessName(),
                         merchant.getBusinessPhone(),
                         merchant.getAccountNumber(),
-                        req != null ? req.label() : null,
-                        req != null ? req.fixedAmount() : null,
                         qrData,
                         imageBase64
                 );

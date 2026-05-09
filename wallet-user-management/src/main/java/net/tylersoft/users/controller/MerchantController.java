@@ -33,7 +33,7 @@ public class MerchantController {
     /** Generate the merchant's QR code on-demand (e.g. for in-app display). */
     @GetMapping("/{merchantId}/qr")
     public Mono<ApiResponse<MerchantQrResponse>> getQr(@PathVariable UUID merchantId) {
-        return merchantService.generateQr(merchantId, null)
+        return merchantService.generateQr(merchantId)
                 .map(ApiResponse::ok);
     }
 }

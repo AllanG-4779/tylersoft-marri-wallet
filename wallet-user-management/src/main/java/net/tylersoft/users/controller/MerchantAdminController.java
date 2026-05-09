@@ -76,28 +76,15 @@ public class MerchantAdminController {
                     .map(r -> ApiResponse.ok("Merchant rejected", r));
             case "SUSPEND" -> merchantService.suspend(merchantId, review.reason(), admin)
                     .map(r -> ApiResponse.ok("Merchant suspended", r));
-            default -> Mono.error(new IllegalArgumentException("action must be APPROVE, REJECT, or SUSPEND"));
+            case "REACTIVATE" -> merchantService.reactivate(merchantId, admin)
+                    .map(r -> ApiResponse.ok("Merchant reactivated", r));
+            default -> Mono.error(new IllegalArgumentException("action must be APPROVE, REJECT, SUSPEND, or REACTIVATE"));
         };
     }
 
-@PostMapping("/{merchantId}/reactivate")
-   
-    public Mono<ApiResponse<MerchantResponse>> reactivate(
-            @PathVariable UUID merchantId,
-            @AuthenticationPrincipal Jwt jwt) {
-        String admin = jwt.getClaimAsString("username");
-        return merchantService.reactivate(merchantId, admin)
-                .map(r -> ApiResponse.ok("Merchant reactivated", r));
-    }
-
-    /** Generate a QR code dynamically for a merchant. */
-    @PostMapping("/{merchantId}/qr")
-   
-    public Mono<ApiResponse<MerchantQrResponse>> generateQr(
-            @PathVariable UUID merchantId,
-            @RequestBody(required = false) UniversalRequestWrapper<MerchantQrRequest> request) {
-        MerchantQrRequest qrReq = request != null ? request.data() : null;
-        return merchantService.generateQr(merchantId, qrReq)
+@GetMapping("/{merchantId}/qr")
+    public Mono<ApiResponse<MerchantQrResponse>> generateQr(@PathVariable UUID merchantId) {
+        return merchantService.generateQr(merchantId)
                 .map(r -> ApiResponse.ok("QR code generated", r));
     }
 
