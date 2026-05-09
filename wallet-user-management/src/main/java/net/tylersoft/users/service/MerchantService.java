@@ -28,6 +28,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -280,17 +284,95 @@ public class MerchantService {
     }
 
     private static String encodeToBase64Png(String content, int size) throws Exception {
+        // 1. Encode — keep your existing hints
         Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
-        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M);
+        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H); // bump to H if adding a logo later
         hints.put(EncodeHintType.MARGIN, 2);
         hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
 
         QRCodeWriter writer = new QRCodeWriter();
         BitMatrix matrix = writer.encode(content, BarcodeFormat.QR_CODE, size, size, hints);
 
+        // 2. Render styled
+        int modules = matrix.getWidth();
+        float mod = (float) size / modules;
+
+        BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = image.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+        // Background
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, size, size);
+
+        // Identify finder pattern zones so we skip them during dot drawing
+        Set<String> finderZone = finderPatternModules(modules);
+
+        // Dots
+        for (int row = 0; row < modules; row++) {
+            for (int col = 0; col < modules; col++) {
+                if (!matrix.get(col, row)) continue;
+                if (finderZone.contains(row + "," + col)) continue;
+                drawRoundedDot(g, col * mod, row * mod, mod, new Color(0x1a1a22));
+            }
+        }
+
+        // Styled corner squares (top-left, top-right, bottom-left)
+        Color outerColor = new Color(0x7c6dfa);
+        Color innerColor = new Color(0xfa6d9b);
+        drawCornerSquare(g, 0,                  0,                  mod, outerColor, innerColor);
+        drawCornerSquare(g, (modules - 7) * mod, 0,                  mod, outerColor, innerColor);
+        drawCornerSquare(g, 0,                  (modules - 7) * mod, mod, outerColor, innerColor);
+
+        g.dispose();
+
+        // 3. Base64 encode — same as before
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        MatrixToImageWriter.writeToStream(matrix, "PNG", out);
+        ImageIO.write(image, "PNG", out);
         return Base64.getEncoder().encodeToString(out.toByteArray());
+    }
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+    private static void drawRoundedDot(Graphics2D g, float x, float y, float mod, Color color) {
+        float pad = mod * 0.1f;
+        float s   = mod - pad * 2;
+        float arc = s * 0.9f;   // ~circle; reduce for softer squares
+        g.setColor(color);
+        g.fill(new RoundRectangle2D.Float(x + pad, y + pad, s, s, arc, arc));
+    }
+
+    private static void drawCornerSquare(Graphics2D g, float x, float y, float mod,
+                                         Color outer, Color inner) {
+        float total = 7 * mod;
+        float outerArc = total * 0.28f;
+
+        // Outer band
+        g.setColor(outer);
+        g.fill(new RoundRectangle2D.Float(x, y, total, total, outerArc, outerArc));
+
+        // White cutout
+        g.setColor(Color.WHITE);
+        float cutSize = total - 2 * mod;
+        g.fill(new RoundRectangle2D.Float(x + mod, y + mod, cutSize, cutSize, outerArc * 0.5f, outerArc * 0.5f));
+
+        // Inner dot
+        g.setColor(inner);
+        float dotSize = 3 * mod;
+        float dotX    = x + 2 * mod;
+        float dotY    = y + 2 * mod;
+        g.fill(new RoundRectangle2D.Float(dotX, dotY, dotSize, dotSize, dotSize * 0.45f, dotSize * 0.45f));
+    }
+
+    private static Set<String> finderPatternModules(int modules) {
+        Set<String> zone = new HashSet<>();
+        int[][] origins = {{0, 0}, {modules - 7, 0}, {0, modules - 7}};
+        for (int[] o : origins)
+            for (int r = 0; r < 7; r++)
+                for (int c = 0; c < 7; c++)
+                    zone.add((o[0] + r) + "," + (o[1] + c));
+        return zone;
     }
 
     // ── Merchant documents ────────────────────────────────────────────────────
