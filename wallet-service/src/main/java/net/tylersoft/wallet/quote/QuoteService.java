@@ -206,13 +206,17 @@ public class QuoteService {
                         .transactionCode("FT")
                         .build();
                 yield fundTransferService.execute(ftReq)
-                        .map(ctx -> ctx.isSuccessful()
-                                ? new ConfirmResponse(
+                        .map(ctx -> {
+                            if (ctx.isSuccessful()) {
+                                return new ConfirmResponse(
                                         ctx.getStagedMessage().getTransactionRef(),
                                         ctx.getStagedMessage().getReceiptNumber(),
-                                        "COMPLETED", "Transaction successful")
-                                : new ConfirmResponse(null, null, "FAILED",
-                                        ctx.getFailureCode() + " - " + ctx.getFailureMessage()));
+                                        "COMPLETED", "Transaction successful");
+                            }
+                            log.warn("FT failed token={} code={} msg={}", quote.getToken(),
+                                    ctx.getFailureCode(), ctx.getFailureMessage());
+                            return new ConfirmResponse(null, null, "FAILED", "Fund transfer failed. Please try again.");
+                        });
             }
             case "AIRTIME" -> {
                 AirtimePurchaseRequest airtimeReq = new AirtimePurchaseRequest(
@@ -224,11 +228,13 @@ public class QuoteService {
                         quote.getPhoneNumber()
                 );
                 yield airtimeService.purchase(airtimeReq)
-                        .map(resp -> new ConfirmResponse(
-                                resp.reference(),
-                                resp.providerReference(),
-                                resp.status(),
-                                resp.message()));
+                        .map(resp -> {
+                            if ("FAILED".equalsIgnoreCase(resp.status())) {
+                                log.warn("Airtime purchase failed token={} msg={}", quote.getToken(), resp.message());
+                                return new ConfirmResponse(resp.reference(), null, "FAILED", "Airtime purchase failed. Please try again.");
+                            }
+                            return new ConfirmResponse(resp.reference(), resp.providerReference(), resp.status(), resp.message());
+                        });
             }
             case "OTT_VOUCHER" -> {
                 OttVoucherPurchaseRequest ottReq = new OttVoucherPurchaseRequest(
@@ -239,11 +245,13 @@ public class QuoteService {
                         quote.getPhoneNumber()
                 );
                 yield ottVoucherService.purchase(ottReq)
-                        .map(resp -> new ConfirmResponse(
-                                resp.reference(),
-                                resp.pin(),
-                                resp.status(),
-                                resp.message()));
+                        .map(resp -> {
+                            if ("FAILED".equalsIgnoreCase(resp.status())) {
+                                log.warn("OTT voucher purchase failed token={} msg={}", quote.getToken(), resp.message());
+                                return new ConfirmResponse(resp.reference(), null, "FAILED", "Voucher purchase failed. Please try again.");
+                            }
+                            return new ConfirmResponse(resp.reference(), resp.pin(), resp.status(), resp.message());
+                        });
             }
             default -> Mono.error(new IllegalArgumentException(
                     "Unsupported transaction type: " + quote.getTransactionType()));

@@ -35,7 +35,9 @@ public class QuoteController {
             @AuthenticationPrincipal Jwt jwt,
             @RequestBody UniversalRequestWrapper<ConfirmRequest> body) {
         return quoteService.confirm(jwt, body.data())
-                .map(ApiResponse::ok)
+                .map(result -> "FAILED".equalsIgnoreCase(result.status())
+                        ? ApiResponse.error(result.message(), result)
+                        : ApiResponse.ok(result))
                 .onErrorResume(ex -> Mono.just(ApiResponse.error(ex.getMessage())));
     }
 }
