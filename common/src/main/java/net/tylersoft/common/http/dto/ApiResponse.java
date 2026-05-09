@@ -10,7 +10,7 @@ public record ApiResponse<T>(
         String error
 ) {
     public static <T> ApiResponse<T> ok(T data) {
-        return new ApiResponse<>("00", null, data, null);
+        return new ApiResponse<>("00", "Request processed successfully", data, null);
     }
 
     public static <T> ApiResponse<T> ok(String message, T data) {
