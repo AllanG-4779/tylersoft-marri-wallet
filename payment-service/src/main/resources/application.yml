@@ -84,7 +84,7 @@ ott:
 
 billing:
   base-url: ${BILLING_BASE_URL}
-  default-base-url: /v2/api/send
+  default-base-url: /v2/api/vend
   username: ${BILLING_USERNAME}
   password: ${BILLING_PASSWORD}
   client-id: ${BILLING_CLIENT_ID}
