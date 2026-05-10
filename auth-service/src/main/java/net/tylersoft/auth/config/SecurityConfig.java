@@ -1,26 +1,19 @@
 package net.tylersoft.auth.config;
 
 import com.nimbusds.jose.jwk.RSAKey;
+import net.tylersoft.common.security.RoleClaimConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import reactor.core.publisher.Mono;
 
 import java.security.interfaces.RSAPublicKey;
-import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -62,13 +55,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    private Converter<Jwt, Mono<AbstractAuthenticationToken>> roleClaimConverter() {
-        return jwt -> {
-            String role = jwt.getClaimAsString("role");
-            List<SimpleGrantedAuthority> authorities = role != null
-                    ? List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                    : List.of();
-            return Mono.just(new JwtAuthenticationToken(jwt, authorities));
-        };
+    private RoleClaimConverter roleClaimConverter() {
+        return new RoleClaimConverter();
     }
 }

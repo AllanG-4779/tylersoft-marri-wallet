@@ -21,6 +21,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+
+
 @RestController
 @RequestMapping("/api/v2/users")
 @RequiredArgsConstructor
@@ -92,14 +94,14 @@ public class UserController {
                 .map(ApiResponse::ok);
     }
 
-    private <T> Mono<Void> validate(T target) {
-        Set<ConstraintViolation<T>> violations = validator.validate(target);
-        if (violations.isEmpty()) return Mono.empty();
-
-        String message = violations.stream()
-                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
-                .sorted()
-                .collect(Collectors.joining(", "));
-        return Mono.error(new IllegalArgumentException(message));
+    private <T> Mono<Void> validate(UniversalRequestWrapper<T> request) {
+        Set<ConstraintViolation<UniversalRequestWrapper<T>>> violations = validator.validate(request);
+        if (!violations.isEmpty()) {
+            String errorMessage = violations.stream()
+                    .map(ConstraintViolation::getMessage)
+                    .collect(Collectors.joining("; "));
+            return Mono.error(new IllegalArgumentException("Validation failed: " + errorMessage));
+        }
+        return Mono.empty();
     }
 }

@@ -10,6 +10,8 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.OffsetDateTime;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -33,12 +35,16 @@ public class SystemAdminSeeder implements ApplicationRunner {
                     admin.setUsername(adminUsername);
                     admin.setPasswordHash(passwordEncoder.encode(adminPassword));
                     admin.setStatus("ACTIVE");
+                    admin.setEnabled(true);
+                    admin.setActive(true);
+                    admin.setFirstLogin(false);
+                    admin.setFailedLoginAttempts(0);
+                    admin.setCreatedOn(OffsetDateTime.now());
+                    admin.setUpdatedOn(OffsetDateTime.now());
                     return adminRepository.save(admin);
                 })
                 .doOnSuccess(admin -> {
-                    if (admin != null) {
-                        log.info("Seeded system administrator: {}", adminUsername);
-                    }
+                    if (admin != null) log.info("Seeded system administrator: {}", adminUsername);
                 })
                 .subscribe();
     }

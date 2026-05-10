@@ -16,8 +16,20 @@ public class AuthAdmin {
     @Id
     private UUID id;
     private String username;
+    private String email;
+    private String firstName;
+    private String lastName;
+    private String phone;
     private String passwordHash;
     private String status;
+    private String createdBy;
+    private Boolean enabled;
+    private Boolean active;
+    private Boolean firstLogin;
+    private OffsetDateTime credentialsSentAt;
+    private OffsetDateTime lastLoginAt;
+    private Integer failedLoginAttempts;
+    private OffsetDateTime accountLockedUntil;
     private OffsetDateTime createdOn;
     private OffsetDateTime updatedOn;
 }

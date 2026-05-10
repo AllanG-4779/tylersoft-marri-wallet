@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -36,13 +37,14 @@ public class JwtTokenService {
         return encoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
     }
 
-    public String issueAdminToken(AuthAdmin admin) {
+    public String issueAdminToken(AuthAdmin admin, List<String> roles) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("mari-wallet")
                 .subject(admin.getId().toString())
                 .claim("username", admin.getUsername())
                 .claim("role", "SYSTEM_ADMIN")
+                .claim("roles", roles)
                 .issuedAt(now)
                 .expiresAt(now.plus(expiryHours, ChronoUnit.HOURS))
                 .build();

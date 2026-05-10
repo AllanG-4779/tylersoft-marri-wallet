@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+
 @RestController
 @RequestMapping("/api/v1/admin/merchants")
 @RequiredArgsConstructor
@@ -33,7 +34,7 @@ public class MerchantAdminController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-//   
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public Mono<ApiResponse<MerchantResponse>> create(
             @RequestPart("data") UniversalRequestWrapper<MerchantRegistrationRequest> request,
             @AuthenticationPrincipal Jwt jwt,
@@ -45,7 +46,7 @@ public class MerchantAdminController {
     }
 
     @GetMapping
-   
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public Mono<ApiResponse<Page<MerchantResponse>>> listAll(
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
@@ -57,12 +58,13 @@ public class MerchantAdminController {
     }
 
     @GetMapping("/{merchantId}")
-   
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public Mono<ApiResponse<MerchantResponse>> getById(@PathVariable UUID merchantId) {
         return merchantService.getById(merchantId).map(ApiResponse::ok);
     }
 
     @PostMapping("/{merchantId}/review")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public Mono<ApiResponse<MerchantResponse>> review(
             @PathVariable UUID merchantId,
             @RequestBody UniversalRequestWrapper<MerchantReviewRequest> request,
@@ -82,14 +84,15 @@ public class MerchantAdminController {
         };
     }
 
-@GetMapping("/{merchantId}/qr")
+    @GetMapping("/{merchantId}/qr")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public Mono<ApiResponse<MerchantQrResponse>> generateQr(@PathVariable UUID merchantId) {
         return merchantService.generateQr(merchantId)
                 .map(r -> ApiResponse.ok("QR code generated", r));
     }
 
     @GetMapping("/{merchantId}/documents")
-   
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public Mono<ApiResponse<List<MerchantDocument>>> getDocuments(@PathVariable UUID merchantId) {
         return merchantService.getDocuments(merchantId)
                 .collectList()
