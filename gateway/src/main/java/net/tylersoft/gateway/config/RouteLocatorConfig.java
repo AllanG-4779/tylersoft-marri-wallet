@@ -12,9 +12,12 @@ public class RouteLocatorConfig {
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
-                // Auth-service: login + JWK set (public)
+                // Auth-service: login, JWK set (public) + system-admin/role management (SYSTEM_ADMIN)
                 .route("auth-service", r -> r
-                        .path("/api/v1/auth/**", "/.well-known/jwks.json")
+                        .path("/api/v1/auth/**",
+                              "/.well-known/jwks.json",
+                              "/api/v1/admin/system-admins/**",
+                              "/api/v1/admin/roles/**")
                         .uri("lb://auth-service"))
                 // User management
                 .route("user-service", r -> r
