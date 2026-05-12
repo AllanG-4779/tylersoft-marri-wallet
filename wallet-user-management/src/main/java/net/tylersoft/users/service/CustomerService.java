@@ -12,7 +12,10 @@ import net.tylersoft.users.model.IdentityDocument;
 import net.tylersoft.users.client.WalletServiceClient;
 import net.tylersoft.users.repository.CustomerRepository;
 import net.tylersoft.users.repository.IdentityDocumentRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.beans.factory.annotation.Value;
+import net.tylersoft.common.http.dto.Page;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -293,5 +296,31 @@ public class CustomerService {
     public Flux<DocumentResponse> getDocuments(UUID customerId) {
         return identityDocumentRepository.findByCustomerId(customerId)
                 .map(DocumentResponse::from);
+    }
+
+    // ── Admin ─────────────────────────────────────────────────────────────────
+
+    public Mono<Page<CustomerResponse>> adminList(String status, int page, int size) {
+        var pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Flux<CustomerResponse> rows = status != null
+                ? customerRepository.findAllByStatus(status, pageable).map(CustomerResponse::from)
+                : customerRepository.findAllBy(pageable).map(CustomerResponse::from);
+        Mono<Long> total = status != null
+                ? customerRepository.countByStatus(status)
+                : customerRepository.count();
+        return Mono.zip(rows.collectList(), total)
+                .map(t -> Page.of(t.getT1(), page, size, t.getT2()));
+    }
+
+    public Mono<AdminCustomerDetailResponse> adminDetail(UUID customerId) {
+        return customerRepository.findById(customerId)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Customer not found: " + customerId)))
+                .flatMap(customer -> Mono.zip(
+                        walletServiceClient.getAccountsByPhone(customer.getPhoneNumber())
+                                .onErrorReturn(List.of()),
+                        identityDocumentRepository.findByCustomerId(customerId)
+                                .map(DocumentResponse::from).collectList(),
+                        deviceService.getDevicesForCustomer(customerId).map(DeviceResponse::from).collectList()
+                ).map(t -> AdminCustomerDetailResponse.from(customer, t.getT1(), t.getT2(), t.getT3())));
     }
 }
