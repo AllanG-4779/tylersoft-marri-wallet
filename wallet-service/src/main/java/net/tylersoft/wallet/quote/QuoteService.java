@@ -49,77 +49,78 @@ public class QuoteService {
                         .findByServiceIdAndServiceCode(svc.getId(), req.transactionCode())
                         .switchIfEmpty(Mono.error(new IllegalArgumentException(
                                 "Unknown transaction code: " + req.transactionCode()))))
-                .flatMap(svcMgmt -> {
-                    BigDecimal amount = BigDecimal.valueOf(req.amount());
+                .flatMap(svcMgmt -> resolveCreditAccount(req)
+                        .flatMap(resolvedCreditAccount -> {
+                            BigDecimal amount = BigDecimal.valueOf(req.amount());
 
-                    Mono<BigDecimal> feeMono = chargeConfigRepository
-                            .findApplicable(svcMgmt.getId(), amount)
-                            .collectList()
-                            .map(charges -> charges.stream()
-                                    .map(c -> computeCharge(c, amount))
-                                    .reduce(BigDecimal.ZERO, BigDecimal::add));
+                            Mono<BigDecimal> feeMono = chargeConfigRepository
+                                    .findApplicable(svcMgmt.getId(), amount)
+                                    .collectList()
+                                    .map(charges -> charges.stream()
+                                            .map(c -> computeCharge(c, amount))
+                                            .reduce(BigDecimal.ZERO, BigDecimal::add));
 
-                    Mono<Account> debitMono = accountRepository
-                            .findByAccountNumber(req.debitAccount())
-                            .switchIfEmpty(Mono.error(new IllegalArgumentException(
-                                    "Debit account not found: " + req.debitAccount())));
+                            Mono<Account> debitMono = accountRepository
+                                    .findByAccountNumber(req.debitAccount())
+                                    .switchIfEmpty(Mono.error(new IllegalArgumentException(
+                                            "Debit account not found: " + req.debitAccount())));
 
-                    Mono<String> recipientNameMono = resolveRecipientName(req);
+                            Mono<String> recipientNameMono = resolveRecipientName(req, resolvedCreditAccount);
 
-                    return Mono.zip(feeMono, debitMono, recipientNameMono)
-                            .flatMap(tuple -> {
-                                BigDecimal fee = tuple.getT1();
-                                Account debit = tuple.getT2();
-                                String recipientName = tuple.getT3();
-                                BigDecimal totalDebit = amount.add(fee);
+                            return Mono.zip(feeMono, debitMono, recipientNameMono)
+                                    .flatMap(tuple -> {
+                                        BigDecimal fee = tuple.getT1();
+                                        Account debit = tuple.getT2();
+                                        String recipientName = tuple.getT3();
+                                        BigDecimal totalDebit = amount.add(fee);
 
-                                if (!callerPhone.equals(debit.getPhoneNumber())) {
-                                    return Mono.error(new SecurityException(
-                                            "Phone number does not match debit account"));
-                                }
-                                if (debit.getAvailableBalance().compareTo(totalDebit) < 0) {
-                                    return Mono.error(new IllegalStateException(
-                                            "Insufficient balance. Required: " + totalDebit
-                                                    + ", Available: " + debit.getAvailableBalance()));
-                                }
+                                        if (!callerPhone.equals(debit.getPhoneNumber())) {
+                                            return Mono.error(new SecurityException(
+                                                    "Phone number does not match debit account"));
+                                        }
+                                        if (debit.getAvailableBalance().compareTo(totalDebit) < 0) {
+                                            return Mono.error(new IllegalStateException(
+                                                    "Insufficient balance. Required: " + totalDebit
+                                                            + ", Available: " + debit.getAvailableBalance()));
+                                        }
 
-                                OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(QUOTE_TTL_MINUTES);
-                                TransactionQuote quote = new TransactionQuote();
-                                quote.setToken(UUID.randomUUID().toString());
-                                quote.setTransactionType(req.transactionType());
-                                quote.setTransactionCode(req.transactionCode());
-                                quote.setDebitAccount(req.debitAccount());
-                                quote.setCreditAccount(req.creditAccount());
-                                quote.setRecipientPhone(req.recipientPhone());
-                                quote.setPhoneNumber(callerPhone);
-                                quote.setAmount(amount);
-                                quote.setFee(fee);
-                                quote.setTotalDebit(totalDebit);
-                                quote.setCurrency(req.currency());
-                                quote.setRecipientName(recipientName);
-                                quote.setStatus("PENDING");
-                                quote.setExpiresAt(expiresAt);
+                                        OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(QUOTE_TTL_MINUTES);
+                                        TransactionQuote quote = new TransactionQuote();
+                                        quote.setToken(UUID.randomUUID().toString());
+                                        quote.setTransactionType(req.transactionType());
+                                        quote.setTransactionCode(req.transactionCode());
+                                        quote.setDebitAccount(req.debitAccount());
+                                        quote.setCreditAccount(resolvedCreditAccount);
+                                        quote.setRecipientPhone(req.recipientPhone());
+                                        quote.setPhoneNumber(callerPhone);
+                                        quote.setAmount(amount);
+                                        quote.setFee(fee);
+                                        quote.setTotalDebit(totalDebit);
+                                        quote.setCurrency(req.currency());
+                                        quote.setRecipientName(recipientName);
+                                        quote.setStatus("PENDING");
+                                        quote.setExpiresAt(expiresAt);
 
-                                log.info("Quote created type={} code={} debit={} amount={} fee={}",
-                                        req.transactionType(), req.transactionCode(),
-                                        req.debitAccount(), amount, fee);
+                                        log.info("Quote created type={} code={} debit={} credit={} amount={} fee={}",
+                                                req.transactionType(), req.transactionCode(),
+                                                req.debitAccount(), resolvedCreditAccount, amount, fee);
 
-                                return quoteRepository.save(quote)
-                                        .map(saved -> new QuoteResponse(
-                                                saved.getToken(),
-                                                saved.getTransactionType(),
-                                                saved.getTransactionCode(),
-                                                amount,
-                                                fee,
-                                                totalDebit,
-                                                req.currency(),
-                                                recipientName,
-                                                req.creditAccount(),
-                                                req.recipientPhone(),
-                                                expiresAt.toString(),
-                                                buildSummary(req, fee, totalDebit, recipientName)));
-                            });
-                });
+                                        return quoteRepository.save(quote)
+                                                .map(saved -> new QuoteResponse(
+                                                        saved.getToken(),
+                                                        saved.getTransactionType(),
+                                                        saved.getTransactionCode(),
+                                                        amount,
+                                                        fee,
+                                                        totalDebit,
+                                                        req.currency(),
+                                                        recipientName,
+                                                        resolvedCreditAccount,
+                                                        req.recipientPhone(),
+                                                        expiresAt.toString(),
+                                                        buildSummary(req, fee, totalDebit, recipientName, resolvedCreditAccount)));
+                                    });
+                        }));
     }
 
     public Mono<ConfirmResponse> confirm(Jwt jwt, ConfirmRequest req) {
@@ -159,9 +160,26 @@ public class QuoteService {
                 });
     }
 
-    private Mono<String> resolveRecipientName(TransactionEnquiryRequest req) {
-        if ("FT".equals(req.transactionType()) && req.creditAccount() != null) {
-            return accountRepository.findByAccountNumber(req.creditAccount())
+    private Mono<String> resolveCreditAccount(TransactionEnquiryRequest req) {
+        if (!"FT".equals(req.transactionType())) {
+            return Mono.just(req.creditAccount() != null ? req.creditAccount() : "");
+        }
+        if (req.creditAccount() != null && !req.creditAccount().isBlank()) {
+            return Mono.just(req.creditAccount());
+        }
+        if (req.recipientPhone() != null && !req.recipientPhone().isBlank()) {
+            return accountRepository.findTopByPhoneNumber(req.recipientPhone())
+                    .map(Account::getAccountNumber)
+                    .switchIfEmpty(Mono.error(new IllegalArgumentException(
+                            "No wallet account found for phone: " + req.recipientPhone())));
+        }
+        return Mono.error(new IllegalArgumentException(
+                "FT requires either creditAccount or recipientPhone"));
+    }
+
+    private Mono<String> resolveRecipientName(TransactionEnquiryRequest req, String resolvedCreditAccount) {
+        if ("FT".equals(req.transactionType()) && resolvedCreditAccount != null && !resolvedCreditAccount.isBlank()) {
+            return accountRepository.findByAccountNumber(resolvedCreditAccount)
                     .map(a -> a.getAccountName() != null ? a.getAccountName() : "Unknown")
                     .defaultIfEmpty("Unknown");
         }
@@ -259,10 +277,10 @@ public class QuoteService {
     }
 
     private String buildSummary(TransactionEnquiryRequest req, BigDecimal fee,
-                                BigDecimal totalDebit, String recipientName) {
+                                BigDecimal totalDebit, String recipientName, String resolvedCreditAccount) {
         return switch (req.transactionType()) {
             case "FT" -> String.format("Send %s %.2f to %s (%s). Fee: %s. Total deducted: %s.",
-                    req.currency(), req.amount(), recipientName, req.creditAccount(), fee, totalDebit);
+                    req.currency(), req.amount(), recipientName, resolvedCreditAccount, fee, totalDebit);
             case "AIRTIME" -> String.format("Buy %s %.2f %s airtime for %s. Fee: %s. Total deducted: %s.",
                     req.currency(), req.amount(), req.transactionCode(), req.recipientPhone(), fee, totalDebit);
             case "OTT_VOUCHER" -> String.format("Buy OTT e-voucher of %s %.2f for %s. Fee: %s. Total deducted: %s.",

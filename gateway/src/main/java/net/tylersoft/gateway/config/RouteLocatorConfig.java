@@ -29,7 +29,7 @@ public class RouteLocatorConfig {
                               "/api/v1/admin/merchants/**",
                               "/api/v1/admin/customers/**")
                         .uri("lb://wallet-user-service"))
-                // Wallet: accounts, transactions, top-up, config, OTT redemption, admin account view
+                // Wallet: accounts, transactions, top-up, config, OTT redemption, admin transaction view
                 .route("wallet-service", r -> r
                         .path("/api/v2/accounts/**",
                               "/api/v2/transactions/**",
@@ -37,7 +37,7 @@ public class RouteLocatorConfig {
                               "/api/v2/airtime/**",
                               "/api/v2/config/**",
                               "/api/v1/ott/redeem",
-                              "/api/v1/admin/accounts/**")
+                              "/api/v1/admin/transactions/**")
                         .uri("lb://wallet-service"))
                 // Payment: billing, intercape, card, OTT, third-party
                 .route("payment-service", r -> r

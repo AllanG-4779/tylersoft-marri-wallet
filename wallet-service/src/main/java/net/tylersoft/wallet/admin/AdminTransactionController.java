@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/admin/accounts/{accountNumber}/transactions")
+@RequestMapping("/api/v1/admin/transactions")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('SYSTEM_ADMIN')")
 public class AdminTransactionController {
@@ -19,7 +19,7 @@ public class AdminTransactionController {
 
     @GetMapping
     public Mono<ApiResponse<List<MiniStatementEntry>>> list(
-            @PathVariable String accountNumber,
+            @RequestParam(required = false) String accountNumber,
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
             @RequestParam(required = false) String type,
@@ -32,7 +32,7 @@ public class AdminTransactionController {
 
     @GetMapping("/summary")
     public Mono<ApiResponse<TransactionSummaryResponse>> summary(
-            @PathVariable String accountNumber,
+            @RequestParam(required = false) String accountNumber,
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to) {
         return adminTransactionService

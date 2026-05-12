@@ -34,9 +34,16 @@ public class AdminTransactionService {
         OffsetDateTime start = parseDate(from, OffsetDateTime.now().minusMonths(3));
         OffsetDateTime end = parseDate(to, OffsetDateTime.now());
 
-        Flux<TrxMessage> rows = type != null && !type.isBlank()
-                ? trxMessageRepository.findAdminStatementByType(accountNumber, type.toUpperCase(), start, end, cap)
-                : trxMessageRepository.findAdminStatement(accountNumber, start, end, cap);
+        Flux<TrxMessage> rows;
+        if (accountNumber != null && !accountNumber.isBlank()) {
+            rows = type != null && !type.isBlank()
+                    ? trxMessageRepository.findAdminStatementByType(accountNumber, type.toUpperCase(), start, end, cap)
+                    : trxMessageRepository.findAdminStatement(accountNumber, start, end, cap);
+        } else {
+            rows = type != null && !type.isBlank()
+                    ? trxMessageRepository.findAllInRangeByType(type.toUpperCase(), start, end, cap)
+                    : trxMessageRepository.findAllInRange(start, end, cap);
+        }
 
         return rows.map(msg -> toEntry(msg, accountNumber));
     }
@@ -45,12 +52,14 @@ public class AdminTransactionService {
         OffsetDateTime start = parseDate(from, OffsetDateTime.now().minusMonths(3));
         OffsetDateTime end = parseDate(to, OffsetDateTime.now());
 
-        return trxMessageRepository.findAdminStatement(accountNumber, start, end, MAX_LIMIT)
-                .collectList()
-                .map(messages -> buildSummary(messages, accountNumber));
+        Flux<TrxMessage> rows = accountNumber != null && !accountNumber.isBlank()
+                ? trxMessageRepository.findAdminStatement(accountNumber, start, end, MAX_LIMIT)
+                : trxMessageRepository.findAllInRange(start, end, MAX_LIMIT);
+
+        return rows.collectList().map(this::buildSummary);
     }
 
-    private TransactionSummaryResponse buildSummary(List<TrxMessage> messages, String accountNumber) {
+    private TransactionSummaryResponse buildSummary(List<TrxMessage> messages) {
         Map<String, List<TrxMessage>> byType = messages.stream()
                 .collect(Collectors.groupingBy(m -> m.getTransactionType() != null ? m.getTransactionType() : "UNKNOWN"));
 
@@ -88,7 +97,7 @@ public class AdminTransactionService {
     }
 
     private MiniStatementEntry toEntry(TrxMessage msg, String accountNumber) {
-        String drCr = accountNumber.equals(msg.getDebitAccount()) ? "DR" : "CR";
+        String drCr = accountNumber != null && accountNumber.equals(msg.getDebitAccount()) ? "DR" : "CR";
         return new MiniStatementEntry(
                 msg.getTransactionRef(),
                 msg.getTransactionType(),
