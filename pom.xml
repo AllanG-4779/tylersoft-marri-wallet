@@ -22,6 +22,7 @@
         <module>wallet-user-management</module>
         <module>payment-service</module>
         <module>gateway</module>
+        <module>event-service</module>
     </modules>
 
     <url/>

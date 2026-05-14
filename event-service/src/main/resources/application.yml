@@ -1,0 +1,55 @@
+server:
+  port: 8094
+
+spring:
+  application:
+    name: event-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8093}/.well-known/jwks.json
+  flyway:
+    url: ${SPRING_FLYWAY_URL}
+    user: ${SPRING_FLYWAY_USER}
+    password: ${SPRING_FLYWAY_PASSWORD}
+    schemas: events
+    locations: classpath:db/migration
+    create-schemas: true
+
+  r2dbc:
+    url: ${SPRING_R2DBC_URL}
+    username: ${SPRING_R2DBC_USERNAME}
+    password: ${SPRING_R2DBC_PASSWORD}
+    pool:
+      max-size: 10
+      initial-size: 2
+
+  cloud:
+    consul:
+      discovery:
+        prefer-ip-address: true
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
+
+  codec:
+    max-in-memory-size: 10MB
+
+file:
+  upload-dir: ${FILE_UPLOAD_DIR:./uploads}
+
+services:
+  wallet-user-service:
+    url: ${WALLET_USER_SERVICE_URL:http://localhost:8091}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: event-service

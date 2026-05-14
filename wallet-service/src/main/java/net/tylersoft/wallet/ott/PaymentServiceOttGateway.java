@@ -27,7 +27,6 @@ public class PaymentServiceOttGateway implements OttVoucherGatewayPort {
                 String.format("%.2f", request.amount()),
                 request.reference()
         );
-
         return webClient.post()
                 .uri("/api/v1/ott/voucher")
                 .bodyValue(body)
