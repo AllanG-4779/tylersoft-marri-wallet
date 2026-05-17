@@ -1,0 +1,870 @@
+{
+  "info": {
+    "name": "Mari Wallet — Event Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",        "value": "http://localhost:8080" },
+    { "key": "userId",         "value": "22222222-2222-2222-2222-222222222222" },
+    { "key": "organizationId", "value": "11111111-1111-1111-1111-111111111111" },
+    { "key": "eventId",        "value": "33333333-3333-3333-3333-333333333333" },
+    { "key": "categoryId",     "value": "44444444-4444-4444-4444-444444444444" },
+    { "key": "tagId",          "value": "55555555-5555-5555-5555-555555555555" },
+    { "key": "ticketTypeId",   "value": "66666666-6666-6666-6666-666666666666" },
+    { "key": "pricingTierId",  "value": "77777777-7777-7777-7777-777777777777" },
+    { "key": "promoCodeId",    "value": "88888888-8888-8888-8888-888888888888" },
+    { "key": "mediaId",        "value": "99999999-9999-9999-9999-999999999999" }
+  ],
+  "item": [
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "List Categories",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"parentId\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", "list"]
+            }
+          }
+        },
+        {
+          "name": "Get Category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{categoryId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/get",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", "get"]
+            }
+          }
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"name\": \"Music\",\n  \"slug\": \"music\",\n  \"parentId\": null,\n  \"iconUrl\": null,\n  \"sortOrder\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", "create"]
+            }
+          }
+        },
+        {
+          "name": "Create Subcategory",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"name\": \"Concert\",\n  \"slug\": \"concert\",\n  \"parentId\": \"{{categoryId}}\",\n  \"iconUrl\": null,\n  \"sortOrder\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", "create"]
+            }
+          }
+        },
+        {
+          "name": "List Subcategories",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"parentId\": \"{{categoryId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", "list"]
+            }
+          }
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{categoryId}}\",\n  \"name\": \"Music & Entertainment\",\n  \"sortOrder\": 1,\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", "update"]
+            }
+          }
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{categoryId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", "delete"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tags",
+      "item": [
+        {
+          "name": "List Tags",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tags", "list"]
+            }
+          }
+        },
+        {
+          "name": "Get Tag",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{tagId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/get",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tags", "get"]
+            }
+          }
+        },
+        {
+          "name": "Create Tag",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"name\": \"Outdoor\",\n  \"slug\": \"outdoor\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tags", "create"]
+            }
+          }
+        },
+        {
+          "name": "Delete Tag",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{tagId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tags", "delete"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "List Events",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "list"]
+            }
+          }
+        },
+        {
+          "name": "List Events by Organization",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "list"]
+            }
+          }
+        },
+        {
+          "name": "List Events by Status",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"status\": \"APPROVED\",\n  \"page\": 0,\n  \"size\": 20\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "list"]
+            }
+          }
+        },
+        {
+          "name": "Get Event",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{eventId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/get",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "get"]
+            }
+          }
+        },
+        {
+          "name": "Create Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"title\": \"Nairobi Jazz Festival 2025\",\n  \"eventType\": \"PHYSICAL\",\n  \"startDate\": \"2025-12-20\",\n  \"startTime\": \"18:00:00\",\n  \"endDate\": \"2025-12-20\",\n  \"endTime\": \"23:00:00\",\n  \"timezone\": \"Africa/Nairobi\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"visibility\": \"PUBLIC\",\n  \"shortDescription\": \"An evening of jazz in the heart of Nairobi.\",\n  \"description\": \"Join us for a night of world-class jazz performances.\",\n  \"venueName\": \"KICC Grounds\",\n  \"venueAddress\": \"City Square\",\n  \"venueCity\": \"Nairobi\",\n  \"venueCountry\": \"Kenya\",\n  \"totalCapacity\": 500,\n  \"bannerUrl\": \"https://example.com/banner.jpg\",\n  \"closeSalesAtCapacity\": true,\n  \"minTicketsPerOrder\": 1,\n  \"maxTicketsPerOrder\": 10,\n  \"allowGroupPurchases\": true,\n  \"showRemainingTickets\": true,\n  \"allowMultipleEntries\": false,\n  \"enableCheckinsStaff\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "create"]
+            }
+          }
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{eventId}}\",\n  \"title\": \"Nairobi Jazz Festival 2025 — Updated\",\n  \"shortDescription\": \"Updated description.\",\n  \"totalCapacity\": 600\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "update"]
+            }
+          }
+        },
+        {
+          "name": "Submit for Approval",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{eventId}}\",\n  \"action\": \"SUBMIT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/change-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "change-status"]
+            }
+          }
+        },
+        {
+          "name": "Approve Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{eventId}}\",\n  \"action\": \"APPROVE\",\n  \"notes\": \"Looks good, approved.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/change-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "change-status"]
+            }
+          }
+        },
+        {
+          "name": "Reject Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{eventId}}\",\n  \"action\": \"REJECT\",\n  \"notes\": \"Missing venue details.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/change-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "change-status"]
+            }
+          }
+        },
+        {
+          "name": "Start Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{eventId}}\",\n  \"action\": \"START\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/change-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "change-status"]
+            }
+          }
+        },
+        {
+          "name": "Complete Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{eventId}}\",\n  \"action\": \"COMPLETE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/change-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "change-status"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{eventId}}\",\n  \"action\": \"CANCEL\",\n  \"notes\": \"Cancelled due to venue unavailability.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/change-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "change-status"]
+            }
+          }
+        },
+        {
+          "name": "Add Tag to Event",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"tagId\": \"{{tagId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/add-tag",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "add-tag"]
+            }
+          }
+        },
+        {
+          "name": "Remove Tag from Event",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"tagId\": \"{{tagId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/remove-tag",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "remove-tag"]
+            }
+          }
+        },
+        {
+          "name": "Delete Event",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{eventId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "events", "delete"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Event Media",
+      "item": [
+        {
+          "name": "List Media",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"eventId\": \"{{eventId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/event-media/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "event-media", "list"]
+            }
+          }
+        },
+        {
+          "name": "Add Media",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"mediaType\": \"image\",\n  \"url\": \"https://example.com/gallery/photo1.jpg\",\n  \"caption\": \"Main stage setup\",\n  \"sortOrder\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/event-media/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "event-media", "add"]
+            }
+          }
+        },
+        {
+          "name": "Delete Media",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"mediaId\": \"{{mediaId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/event-media/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "event-media", "delete"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ticket Types",
+      "item": [
+        {
+          "name": "List Ticket Types",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"eventId\": \"{{eventId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ticket-types/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ticket-types", "list"]
+            }
+          }
+        },
+        {
+          "name": "Get Ticket Type",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{ticketTypeId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ticket-types/get",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ticket-types", "get"]
+            }
+          }
+        },
+        {
+          "name": "Create Ticket Type",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"name\": \"VIP\",\n  \"description\": \"Front row access with complimentary drinks.\",\n  \"color\": \"#FFD700\",\n  \"totalCapacity\": 50,\n  \"basePrice\": 5000.00,\n  \"sortOrder\": 1,\n  \"groupTicket\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ticket-types/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ticket-types", "create"]
+            }
+          }
+        },
+        {
+          "name": "Create Group Ticket Type",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"name\": \"Table of 5\",\n  \"description\": \"Reserve a full table for your group.\",\n  \"totalCapacity\": 100,\n  \"basePrice\": 20000.00,\n  \"sortOrder\": 3,\n  \"groupTicket\": true,\n  \"groupSize\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ticket-types/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ticket-types", "create"]
+            }
+          }
+        },
+        {
+          "name": "Update Ticket Type",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{ticketTypeId}}\",\n  \"totalCapacity\": 75,\n  \"hidden\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ticket-types/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ticket-types", "update"]
+            }
+          }
+        },
+        {
+          "name": "Delete Ticket Type",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"id\": \"{{ticketTypeId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ticket-types/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ticket-types", "delete"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pricing Tiers",
+      "item": [
+        {
+          "name": "List Pricing Tiers",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"ticketTypeId\": \"{{ticketTypeId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pricing-tiers/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pricing-tiers", "list"]
+            }
+          }
+        },
+        {
+          "name": "Get Pricing Tier",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{pricingTierId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pricing-tiers/get",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pricing-tiers", "get"]
+            }
+          }
+        },
+        {
+          "name": "Create Pricing Tier — Early Bird",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"ticketTypeId\": \"{{ticketTypeId}}\",\n  \"name\": \"Early Bird\",\n  \"price\": 3000.00,\n  \"quantity\": 100,\n  \"startsAt\": \"2025-10-01T00:00:00+03:00\",\n  \"endsAt\": \"2025-11-15T23:59:59+03:00\",\n  \"sortOrder\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pricing-tiers/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pricing-tiers", "create"]
+            }
+          }
+        },
+        {
+          "name": "Create Pricing Tier — Regular",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"ticketTypeId\": \"{{ticketTypeId}}\",\n  \"name\": \"Regular\",\n  \"price\": 4500.00,\n  \"quantity\": 200,\n  \"startsAt\": \"2025-11-16T00:00:00+03:00\",\n  \"endsAt\": \"2025-12-19T23:59:59+03:00\",\n  \"sortOrder\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pricing-tiers/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pricing-tiers", "create"]
+            }
+          }
+        },
+        {
+          "name": "Update Pricing Tier",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": \"{{pricingTierId}}\",\n  \"price\": 2500.00,\n  \"quantity\": 150\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pricing-tiers/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pricing-tiers", "update"]
+            }
+          }
+        },
+        {
+          "name": "Delete Pricing Tier",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"ticketTypeId\": \"{{ticketTypeId}}\",\n  \"id\": \"{{pricingTierId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pricing-tiers/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pricing-tiers", "delete"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Promo Codes",
+      "item": [
+        {
+          "name": "List Promo Codes",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"eventId\": \"{{eventId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/promo-codes/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "promo-codes", "list"]
+            }
+          }
+        },
+        {
+          "name": "Get Promo Code",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"id\": \"{{promoCodeId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/promo-codes/get",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "promo-codes", "get"]
+            }
+          }
+        },
+        {
+          "name": "Create Promo Code — Percentage",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"code\": \"EARLYBIRD20\",\n  \"description\": \"20% off for early supporters\",\n  \"discountType\": \"PERCENTAGE\",\n  \"discountValue\": 20.00,\n  \"maxUses\": 100,\n  \"startsAt\": \"2025-10-01T00:00:00+03:00\",\n  \"expiresAt\": \"2025-11-30T23:59:59+03:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/promo-codes/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "promo-codes", "create"]
+            }
+          }
+        },
+        {
+          "name": "Create Promo Code — Fixed",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"code\": \"SAVE500\",\n  \"description\": \"KES 500 off any order\",\n  \"discountType\": \"FIXED\",\n  \"discountValue\": 500.00,\n  \"minOrderAmount\": 2000.00,\n  \"maxUses\": 50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/promo-codes/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "promo-codes", "create"]
+            }
+          }
+        },
+        {
+          "name": "Update Promo Code",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"id\": \"{{promoCodeId}}\",\n  \"maxUses\": 200,\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/promo-codes/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "promo-codes", "update"]
+            }
+          }
+        },
+        {
+          "name": "Delete Promo Code",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"id\": \"{{promoCodeId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/promo-codes/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "promo-codes", "delete"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
