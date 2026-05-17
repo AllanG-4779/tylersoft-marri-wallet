@@ -1,5 +1,6 @@
 package net.tylersoft.events.repository;
 
+import net.tylersoft.events.common.EventStatus;
 import net.tylersoft.events.model.Event;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
@@ -12,11 +13,13 @@ public interface EventRepository extends R2dbcRepository<Event, UUID> {
 
     Flux<Event> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
-    Flux<Event> findAllByMerchantCodeOrderByCreatedAtDesc(String merchantCode, Pageable pageable);
+    Flux<Event> findAllByOrganizationIdOrderByCreatedAtDesc(UUID organizationId, Pageable pageable);
 
-    Mono<Long> countByMerchantCode(String merchantCode);
+    Mono<Long> countByOrganizationId(UUID organizationId);
 
-    Flux<Event> findAllByStatusOrderByStartAtAsc(String status, Pageable pageable);
+    Flux<Event> findAllByStatusOrderByStartDateAsc(EventStatus status, Pageable pageable);
 
-    Mono<Long> countByStatus(String status);
+    Mono<Long> countByStatus(EventStatus status);
+
+    Mono<Boolean> existsByOrganizationIdAndSlug(UUID organizationId, String slug);
 }
