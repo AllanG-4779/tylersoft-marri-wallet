@@ -45,8 +45,8 @@ public class SecurityConfig {
                                 "/api/v2/purchases/**",
                                 "/api/v2/purchases/tickets",
                                 "/api/v1/events/**"
-                        ).authenticated()
-                        .anyExchange().authenticated()
+                        ).permitAll()
+                        .anyExchange().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(new RoleClaimConverter())))
