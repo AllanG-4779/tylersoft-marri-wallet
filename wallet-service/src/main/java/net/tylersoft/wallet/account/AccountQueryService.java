@@ -77,7 +77,7 @@ public class AccountQueryService {
                                 .switchIfEmpty(Mono.error(new IllegalArgumentException(
                                         "Account not found: " + req.accountNumber())))
                                 .flatMap(account -> {
-                                    enforceOwnership(callerPhone, account.getPhoneNumber(), req.accountNumber());
+                                    enforceOwnership(callerPhone, account.getPhoneNumber(), req.accountNumber(), jwt.getClaimAsString("role").contains("INTEGRATOR"));
                                     return resolveEnquiry(req, account.getCurrencyId());
                                 })
                 );
@@ -122,7 +122,7 @@ public class AccountQueryService {
     private Mono<EnquiryResponse> miniStatement(AccountEnquiryRequest req) {
         int limit = Math.min(Math.max(req.limit() != null && req.limit() > 0 ? req.limit() : 10, 1), MAX_LIMIT);
         return trxMessageRepository.findMiniStatement(req.accountNumber(), limit)
-                .filter(each->each.getStatus().equals(TransactionStatus.COMPLETED.code()))
+                .filter(each -> each.getStatus().equals(TransactionStatus.COMPLETED.code()))
                 .map(msg -> toEntry(msg, req.accountNumber()))
                 .collectList()
                 .map(entries -> new EnquiryResponse(req.transactionType(), req.transactionCode(), null, entries));
@@ -132,7 +132,7 @@ public class AccountQueryService {
         OffsetDateTime from = parseDate(req.fromDate(), OffsetDateTime.now().minusMonths(1));
         OffsetDateTime to = parseDate(req.toDate(), OffsetDateTime.now());
         return trxMessageRepository.findStatement(req.accountNumber(), from, to)
-                .filter(each->each.getStatus().equals(TransactionStatus.COMPLETED.code()))
+                .filter(each -> each.getStatus().equals(TransactionStatus.COMPLETED.code()))
                 .map(msg -> toEntry(msg, req.accountNumber()))
                 .collectList()
                 .map(entries -> new EnquiryResponse(req.transactionType(), req.transactionCode(), null, entries));
@@ -158,8 +158,8 @@ public class AccountQueryService {
         );
     }
 
-    private void enforceOwnership(String callerPhone, String accountPhone, String accountNumber) {
-        if (callerPhone == null || !callerPhone.equals(accountPhone)) {
+    private void enforceOwnership(String callerPhone, String accountPhone, String accountNumber, boolean isIntegrator) {
+        if ((callerPhone == null || !callerPhone.equals(accountPhone)) && !isIntegrator) {
             log.warn("Ownership check failed: caller={} account={}", callerPhone, accountNumber);
             throw new UnauthorizedException("Access denied: account does not belong to this customer");
         }
