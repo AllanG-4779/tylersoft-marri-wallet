@@ -3,7 +3,7 @@ package net.tylersoft.wallet.quote;
 import lombok.RequiredArgsConstructor;
 import net.tylersoft.common.http.dto.ApiResponse;
 import net.tylersoft.common.http.dto.UniversalRequestWrapper;
-import net.tylersoft.wallet.config.CustomerOnly;
+import net.tylersoft.wallet.config.CustomerOrIntegratorOnly;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +19,7 @@ public class QuoteController {
 
     private final QuoteService quoteService;
 
-    @CustomerOnly
+    @CustomerOrIntegratorOnly
     @PostMapping("/enquire")
     public Mono<ApiResponse<QuoteResponse>> enquire(
             @AuthenticationPrincipal Jwt jwt,
@@ -29,7 +29,7 @@ public class QuoteController {
                 .onErrorResume(ex -> Mono.just(ApiResponse.error(ex.getMessage())));
     }
 
-    @CustomerOnly
+    @CustomerOrIntegratorOnly
     @PostMapping("/confirm")
     public Mono<ApiResponse<ConfirmResponse>> confirm(
             @AuthenticationPrincipal Jwt jwt,

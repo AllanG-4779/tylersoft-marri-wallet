@@ -3,7 +3,9 @@ package net.tylersoft.wallet.account;
 import net.tylersoft.common.http.dto.ApiResponse;
 import net.tylersoft.common.http.dto.UniversalRequestWrapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -17,14 +19,15 @@ public class AccountController {
 
     private final AccountOpeningService accountOpeningService;
     private final AccountQueryService   accountQueryService;
-
+     @PreAuthorize("hasRole('SERVICE') OR hasRole('INTEGRATOR')")
     @PostMapping
     public Mono<ApiResponse<OpenAccountResult>> openAccount(
             @RequestBody UniversalRequestWrapper<OpenAccountRequest> request) {
         OpenAccountRequest data = request.data();
+
         return accountOpeningService.openAccount(
                         data.currency(),
-                        data.accountPrefix(),
+                        data.accountPrefix()==null?"TA":data.accountPrefix(),
                         data.phoneNumber(),
                         data.accountName(),
                         "create", "")

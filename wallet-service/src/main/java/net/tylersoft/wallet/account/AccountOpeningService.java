@@ -59,6 +59,9 @@ public class AccountOpeningService {
         if (!"create".equalsIgnoreCase(reqType)) {
             return Mono.just(OpenAccountResult.error("03", "Invalid account management request"));
         }
+        if (phoneNumber == null || phoneNumber.isBlank() || !phoneNumber.matches("^\\+?[0-9]{7,15}$")) {
+            return Mono.just(OpenAccountResult.error("02", "Invalid phone number"));
+        }
         return accountTypeRepository.findByAccountPrefix(accountPrefix)
                 .switchIfEmpty(Mono.error(new OpenAccountException("01", "Invalid account prefix")))
                 .flatMap(each -> {

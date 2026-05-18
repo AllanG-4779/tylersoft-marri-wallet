@@ -40,7 +40,8 @@ public class QuoteService {
     private final OttVoucherService ottVoucherService;
 
     public Mono<QuoteResponse> enquire(Jwt jwt, TransactionEnquiryRequest req) {
-        String callerPhone = jwt.getClaimAsString("phone");
+        boolean isIntegrator = "INTEGRATOR".equals(jwt.getClaimAsString("role"));
+        String callerPhone = isIntegrator ? null : jwt.getClaimAsString("phone");
 
         return sysServiceRepository.findByTransactionType(req.transactionType())
                 .switchIfEmpty(Mono.error(new IllegalArgumentException(
@@ -74,7 +75,7 @@ public class QuoteService {
                                         String recipientName = tuple.getT3();
                                         BigDecimal totalDebit = amount.add(fee);
 
-                                        if (!callerPhone.equals(debit.getPhoneNumber())) {
+                                        if (!isIntegrator && !callerPhone.equals(debit.getPhoneNumber())) {
                                             return Mono.error(new SecurityException(
                                                     "Phone number does not match debit account"));
                                         }
@@ -84,6 +85,9 @@ public class QuoteService {
                                                             + ", Available: " + debit.getAvailableBalance()));
                                         }
 
+                                        // Integrators act on behalf of the account owner — store the account's phone
+                                        String quotePhone = isIntegrator ? debit.getPhoneNumber() : callerPhone;
+
                                         OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(QUOTE_TTL_MINUTES);
                                         TransactionQuote quote = new TransactionQuote();
                                         quote.setToken(UUID.randomUUID().toString());
@@ -92,7 +96,7 @@ public class QuoteService {
                                         quote.setDebitAccount(req.debitAccount());
                                         quote.setCreditAccount(resolvedCreditAccount);
                                         quote.setRecipientPhone(req.recipientPhone());
-                                        quote.setPhoneNumber(callerPhone);
+                                        quote.setPhoneNumber(quotePhone);
                                         quote.setAmount(amount);
                                         quote.setFee(fee);
                                         quote.setTotalDebit(totalDebit);
@@ -101,9 +105,10 @@ public class QuoteService {
                                         quote.setStatus("PENDING");
                                         quote.setExpiresAt(expiresAt);
 
-                                        log.info("Quote created type={} code={} debit={} credit={} amount={} fee={}",
+                                        log.info("Quote created type={} code={} debit={} credit={} amount={} fee={} caller={}",
                                                 req.transactionType(), req.transactionCode(),
-                                                req.debitAccount(), resolvedCreditAccount, amount, fee);
+                                                req.debitAccount(), resolvedCreditAccount, amount, fee,
+                                                isIntegrator ? "INTEGRATOR:" + jwt.getSubject() : quotePhone);
 
                                         return quoteRepository.save(quote)
                                                 .map(saved -> new QuoteResponse(
@@ -124,7 +129,8 @@ public class QuoteService {
     }
 
     public Mono<ConfirmResponse> confirm(Jwt jwt, ConfirmRequest req) {
-        String callerPhone = jwt.getClaimAsString("phone");
+        boolean isIntegrator = "INTEGRATOR".equals(jwt.getClaimAsString("role"));
+        String callerPhone = isIntegrator ? null : jwt.getClaimAsString("phone");
 
         return quoteRepository.findByToken(req.quoteToken())
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("Invalid or unknown quote token")))
@@ -139,7 +145,7 @@ public class QuoteService {
                         return quoteRepository.save(quote)
                                 .then(Mono.error(new IllegalStateException("Quote has expired. Please re-enquire.")));
                     }
-                    if (!callerPhone.equals(quote.getPhoneNumber())) {
+                    if (!isIntegrator && !callerPhone.equals(quote.getPhoneNumber())) {
                         return Mono.error(new SecurityException("Quote does not belong to this caller"));
                     }
 
