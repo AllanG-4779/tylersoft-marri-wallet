@@ -7,5 +7,5 @@ import java.lang.annotation.*;
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@PreAuthorize("@customerGuard.isCustomer(authentication) or @integratorGuard.isIntegrator(authentication)")
+@PreAuthorize("@authGuard.isCustomerOrIntegrator(authentication)")
 public @interface CustomerOrIntegratorOnly {}

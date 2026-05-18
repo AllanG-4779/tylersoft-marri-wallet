@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.tylersoft.common.exception.exceptions.UnauthorizedException;
 import net.tylersoft.wallet.common.TransactionStatus;
-import net.tylersoft.wallet.config.CustomerOnly;
+
 import net.tylersoft.wallet.config.CustomerOrIntegratorOnly;
 import net.tylersoft.wallet.repository.AccountRepository;
 import net.tylersoft.wallet.repository.CurrencyRepository;
