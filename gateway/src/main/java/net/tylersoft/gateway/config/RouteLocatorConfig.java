@@ -48,6 +48,16 @@ public class RouteLocatorConfig {
                               "/api/v1/ott/**",
                               "/api/v1/third-party/**")
                         .uri("lb://payment-service"))
+                // Events: events, categories, tags, media, ticket types, pricing tiers, promo codes
+                .route("event-service", r -> r
+                        .path("/api/v1/events/**",
+                              "/api/v1/categories/**",
+                              "/api/v1/tags/**",
+                              "/api/v1/event-media/**",
+                              "/api/v1/ticket-types/**",
+                              "/api/v1/pricing-tiers/**",
+                              "/api/v1/promo-codes/**")
+                        .uri("lb://event-service"))
                 .build();
     }
 }
