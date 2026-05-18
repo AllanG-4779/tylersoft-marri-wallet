@@ -12,10 +12,13 @@ import net.tylersoft.events.dto.event.EventResponse;
 import net.tylersoft.events.dto.event.EventStatusRequest;
 import net.tylersoft.events.dto.event.UpdateEventRequest;
 import net.tylersoft.events.model.Event;
+import net.tylersoft.events.repository.EventCategoryRepository;
 import net.tylersoft.events.repository.EventRepository;
+import net.tylersoft.events.repository.TagRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -29,6 +32,8 @@ import java.util.UUID;
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final EventCategoryRepository categoryRepository;
+    private final TagRepository tagRepository;
     private final DatabaseClient databaseClient;
 
     public Mono<Page<EventResponse>> listAll(int page, int size) {
@@ -61,11 +66,20 @@ public class EventService {
                 .map(EventResponse::from);
     }
 
-    public Mono<EventResponse> create(CreateEventRequest req, UUID createdBy) {
+    public Mono<EventResponse> create(CreateEventRequest req, String bannerUrl, String logoUrl, UUID createdBy) {
         String slug = req.slug() != null ? req.slug() : toSlug(req.title());
-        return eventRepository.existsByOrganizationIdAndSlug(req.organizationId(), slug)
+
+        Mono<Void> categoryCheck = req.categoryId() == null ? Mono.empty() :
+                categoryRepository.existsById(req.categoryId())
+                        .flatMap(exists -> exists ? Mono.empty() :
+                                Mono.error(new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                                        "Category not found: " + req.categoryId())));
+
+        return categoryCheck
+                .then(eventRepository.existsByOrganizationIdAndSlug(req.organizationId(), slug))
                 .flatMap(exists -> {
-                    if (exists) return Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "An event with this slug already exists for the organization"));
+                    if (exists)
+                        return Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "An event with this slug already exists for the organization"));
                     Event e = new Event();
                     e.setOrganizationId(req.organizationId());
                     e.setCreatedBy(createdBy);
@@ -91,8 +105,8 @@ public class EventService {
                     e.setTimezone(req.timezone() != null ? req.timezone() : "Africa/Nairobi");
                     e.setTimeDisplay(req.timeDisplay() != null ? req.timeDisplay() : EventTimeDisplay.START_AND_END);
                     e.setTotalCapacity(req.totalCapacity());
-                    e.setBannerUrl(req.bannerUrl());
-                    e.setLogoUrl(req.logoUrl());
+                    e.setBannerUrl(bannerUrl);
+                    e.setLogoUrl(logoUrl);
                     e.setSalesStartAt(req.salesStartAt());
                     e.setSalesEndAt(req.salesEndAt());
                     e.setCloseSalesAtCapacity(req.closeSalesAtCapacity() != null ? req.closeSalesAtCapacity() : true);
@@ -186,9 +200,15 @@ public class EventService {
     }
 
     public Mono<Void> addTag(UUID eventId, UUID tagId) {
-        return eventRepository.existsById(eventId)
-                .flatMap(exists -> {
-                    if (!exists) return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        return Mono.zip(
+                        eventRepository.existsById(eventId),
+                        tagRepository.existsById(tagId)
+                )
+                .flatMap(t -> {
+                    if (!t.getT1())
+                        return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+                    if (!t.getT2())
+                        return Mono.error(new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Tag not found: " + tagId));
                     return databaseClient.sql("INSERT INTO event_tags (event_id, tag_id) VALUES (:eventId, :tagId) ON CONFLICT DO NOTHING")
                             .bind("eventId", eventId)
                             .bind("tagId", tagId)

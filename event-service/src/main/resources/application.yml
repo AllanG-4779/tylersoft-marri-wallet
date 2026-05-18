@@ -42,6 +42,9 @@ file:
 services:
   wallet-user-service:
     url: ${WALLET_USER_SERVICE_URL:http://localhost:8091}
+payment:
+  service:
+    base-url: ${PAYMENT_SERVICE_URL:http://localhost:8092}
 
 management:
   endpoints:
@@ -54,3 +57,11 @@ management:
   metrics:
     tags:
       application: event-service
+tylersoft:
+  storage:
+    minio:
+      access-key: ${MINIO_ACCESS_KEY:accesskey}
+      secret-key: ${MINIO_SECRET_KEY:secretkey}
+      endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+      bucket: ${MINIO_BUCKET_NAME:events}
+

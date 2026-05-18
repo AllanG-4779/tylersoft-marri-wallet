@@ -14,7 +14,6 @@ public record ChannelDetails(
         /** OS version, e.g. "Android 14" or "iOS 17.2". */
         String osVersion,
 
-        /** App semantic version, e.g. "1.4.2". */
         String appVersion,
 
         @NotBlank(message = "channelDetails.channel is required")

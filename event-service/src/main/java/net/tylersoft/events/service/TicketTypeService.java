@@ -37,6 +37,12 @@ public class TicketTypeService {
         return eventRepository.existsById(eventId)
                 .flatMap(exists -> {
                     if (!exists) return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+                    return ticketTypeRepository.existsByEventIdAndNameIgnoreCase(eventId, req.name());
+                })
+                .flatMap(nameTaken -> {
+                    if (nameTaken)
+                        return Mono.error(new ResponseStatusException(HttpStatus.CONFLICT,
+                                "A ticket type named '" + req.name() + "' already exists for this event"));
                     TicketType tt = new TicketType();
                     tt.setEventId(eventId);
                     tt.setName(req.name());
@@ -61,6 +67,15 @@ public class TicketTypeService {
     public Mono<TicketTypeResponse> update(UUID id, UpdateTicketTypeRequest req) {
         return ticketTypeRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Ticket type not found")))
+                .flatMap(tt -> {
+                    if (req.name() == null || req.name().equalsIgnoreCase(tt.getName()))
+                        return Mono.just(tt);
+                    return ticketTypeRepository.existsByEventIdAndNameIgnoreCaseAndIdNot(tt.getEventId(), req.name(), id)
+                            .flatMap(taken -> taken
+                                    ? Mono.error(new ResponseStatusException(HttpStatus.CONFLICT,
+                                            "A ticket type named '" + req.name() + "' already exists for this event"))
+                                    : Mono.just(tt));
+                })
                 .flatMap(tt -> {
                     if (req.name() != null) tt.setName(req.name());
                     if (req.description() != null) tt.setDescription(req.description());
