@@ -73,6 +73,9 @@ jobs:
           - service: gateway
             dockerfile: gateway/Dockerfile
             image_name: gateway
+          - service: events-service
+            dockerfile: event-service/Dockerfile
+            image_name: events-service
 
     steps:
       - name: Checkout
